@@ -8,16 +8,18 @@ import {
   access,
 } from "fs/promises";
 import { constants } from "fs";
-import type {
-  IBlob,
-  ICommit,
-  IHead,
-  IMetadata,
-  IObject,
-  IRef,
-  ITree,
-  IStorageAdapter,
-} from "../../../interface/src";
+import {
+  type IBlob,
+  type ICommit,
+  type IHead,
+  type IMetadata,
+  type IObject,
+  type IRef,
+  type ITree,
+  type IStorageAdapter,
+  AllObjectTypes,
+  ObjectType,
+} from "@gitblobsdb/interface/src";
 
 export class FileSystemStorageAdapter implements IStorageAdapter {
   private readonly basePath: string;
@@ -98,15 +100,7 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
 
   private async readObject(
     hash: string,
-    type: "blob"
-  ): Promise<Uint8Array | null>;
-  private async readObject(
-    hash: string,
-    type: "tree" | "commit" | "metadata"
-  ): Promise<Record<string, any> | null>;
-  private async readObject(
-    hash: string,
-    type: "blob" | "tree" | "commit" | "metadata"
+    type: ObjectType
   ): Promise<Uint8Array | Record<string, any> | null> {
     try {
       let path: string;
@@ -142,17 +136,10 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
 
   async getObject(hash: string): Promise<IObject | null> {
     // Try each type until we find a match
-    for (const type of ["blob", "tree", "commit", "metadata"] as const) {
-      if (type === "blob") {
-        const content = await this.readObject(hash, type);
-        if (content !== null) {
-          return { type, hash, content };
-        }
-      } else {
-        const content = await this.readObject(hash, type);
-        if (content !== null) {
-          return { type, hash, content };
-        }
+    for (const type of AllObjectTypes) {
+      const content = await this.readObject(hash, type);
+      if (content !== null) {
+        return { type, hash, content };
       }
     }
     return null;
@@ -164,7 +151,7 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
 
   async getBlob(hash: string): Promise<IBlob | null> {
     const content = await this.readObject(hash, "blob");
-    return content ? { hash, content } : null;
+    return content ? ({ hash, content } as IBlob) : null;
   }
 
   async putBlob(blob: IBlob): Promise<void> {
@@ -177,7 +164,7 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
 
   async getTree(hash: string): Promise<ITree | null> {
     const content = await this.readObject(hash, "tree");
-    return content ? { hash, entries: content } : null;
+    return content ? ({ hash, entries: content } as ITree) : null;
   }
 
   async putTree(tree: ITree): Promise<void> {
@@ -277,7 +264,7 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
 
   async hasObject(hash: string): Promise<boolean> {
     // Try each type until we find a match
-    for (const type of ["blob", "tree", "commit", "metadata"] as const) {
+    for (const type of AllObjectTypes) {
       let path: string;
       switch (type) {
         case "blob":
@@ -305,7 +292,7 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
 
   async deleteObject(hash: string): Promise<void> {
     // Try each type until we find and delete the object
-    for (const type of ["blob", "tree", "commit", "metadata"] as const) {
+    for (const type of AllObjectTypes) {
       let path: string;
       switch (type) {
         case "blob":

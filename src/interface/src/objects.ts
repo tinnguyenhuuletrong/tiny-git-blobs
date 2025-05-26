@@ -49,6 +49,12 @@ export interface IHead {
 }
 
 export type ObjectType = "blob" | "tree" | "commit" | "metadata";
+export const AllObjectTypes: ObjectType[] = [
+  "blob",
+  "tree",
+  "commit",
+  "metadata",
+] as const;
 
 export interface IObject {
   type: ObjectType;
