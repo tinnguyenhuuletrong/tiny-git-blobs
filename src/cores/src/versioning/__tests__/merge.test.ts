@@ -102,7 +102,6 @@ describe("Merge Utilities", () => {
       };
 
       const { merged, conflicts } = mergeTrees(base, ours, theirs);
-      console.log("merged", merged);
 
       expect(conflicts).toHaveLength(0);
       expect(merged.entries).toHaveProperty(["file1.txt"]);
