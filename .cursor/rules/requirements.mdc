@@ -100,16 +100,16 @@ You will implement the following data structures. Hashes are typically SHA-256 o
 
 ```
 /src/
-├── //cores/                 # Platform-agnostic core logic (TS)
+├── //cores/src              # Platform-agnostic core logic (TS)
 │    ├── objects/            # Definitions & utils for Blob, Tree, Commit, Metadata
 │    ├── versioning/         # Commit, branch, merge, diff logic
 │    ├── utils/              # Hashing, serialization
-│    └── tests/          # Unit tests for core logic
-├── //interface/             # Shared TypeScript interfaces & types
+│    └── tests/              # Unit tests for core logic
+├── //interface/src          # Shared TypeScript interfaces & types
 │    ├── objects.ts
 │    ├── storage.ts
 │    └── api.ts
-├── //adapter/               # Interface implementations
+├── //adapter/src            # Interface implementations
 │    ├── storage/
 │    │   ├── FileSystemStorageAdapter.ts  # For Bun server
 │    │   └── IndexedDBStorageAdapter.ts   # For browser client
@@ -131,6 +131,9 @@ You will implement the following data structures. Hashes are typically SHA-256 o
 ├── package.json             # Root package.json for monorepo (e.g., using pnpm workspaces)
 └── tsconfig.base.json       # Base TypeScript configuration
 ```
+
+Note
+- all typescript module src should locate inside <moduleName>/src folder
 
 ## 5. Development Workflow & Feature Implementation Steps 🛠️
 
