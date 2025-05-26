@@ -1,0 +1,19 @@
+{
+  "name": "@gitblobsdb/adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "build": "bun build ./src/index.ts --outdir ./dist",
+    "dev": "bun build ./src/index.ts --outdir ./dist --watch"
+  },
+  "dependencies": {
+    "@gitblobsdb/interface": "workspace:*",
+    "@gitblobsdb/cores": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^1.2.2",
+    "typescript": "^5.3.3"
+  }
+} 

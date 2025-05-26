@@ -1,12 +1,22 @@
 {
   "name": "gitblobsdb",
-  "module": "index.ts",
-  "type": "module",
+  "version": "0.1.0",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "workspaces": [
+    "src/cores",
+    "src/interface",
+    "src/adapter",
+    "src/server",
+    "src/client-web"
+  ],
+  "scripts": {
+    "test": "bun run --cwd src/cores test && bun run --cwd src/interface test && bun run --cwd src/adapter test && bun run --cwd src/server test && bun run --cwd src/client-web test",
+    "build": "bun run --cwd src/cores build && bun run --cwd src/interface build && bun run --cwd src/adapter build && bun run --cwd src/server build && bun run --cwd src/client-web build",
+    "dev": "bun run --cwd src/server dev & bun run --cwd src/client-web dev"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2",
+    "@types/node": "^20.11.19"
   }
 }
