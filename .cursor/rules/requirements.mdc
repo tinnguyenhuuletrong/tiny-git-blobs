@@ -1,0 +1,218 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project: GitBlobsDB - AI Agent Development Guidelines
+
+## 1. Project Objective 🎯
+
+Your primary goal is to develop **GitBlobsDB**, a NoSQL database system with Git-like versioning features. The system must support:
+* Branching and merging.
+* Storage of data as immutable blob objects + versioned JSON metadata.
+* Revision control (commits, history traversal, revert concepts).
+* A simple, Git-inspired API (`/fetch`, `/push`, `/pull`, `/blob/:hash`).
+* Local-first operations: each peer has local storage, works on multiple branches, and maintains a local HEAD revision.
+* Synchronization via exchanging necessary objects (conceptually, "patches" based on revision differences).
+
+---
+
+## 2. Core AI Directives 🧠
+
+* **Adhere Strictly to Specifications**: Implement features precisely as outlined in project documentation and these guidelines.
+* **Prioritize Core Logic**: Focus on robust, well-tested implementations of data structures and versioning operations within the `/cores` directory. This logic MUST be portable.
+* **Interface First**: Define clear TypeScript interfaces in `/interface` before starting any implementation. This is your contract.
+* **Adapter Pattern for I/O**: Implement specific storage (file system, browser) and network functionalities via adapters in the `/adapter` directory.
+* **Modularity & Portability**: Ensure code in `/cores` is platform-agnostic (no Bun/Node.js or browser-specific APIs).
+* **Test Thoroughly**: Write comprehensive unit tests for all functions and modules in `/cores`. Every piece of logic must be verifiable.
+* **Immutability is Key**: Treat core data objects (Blobs, Trees, Commits, Metadata) as immutable. Any "modification" results in a new object with a new hash.
+* **Content-Addressable Storage**: Object IDs (hashes) are derived from their content (e.g., SHA-256).
+* **Clear Naming Conventions**: Use consistent and descriptive names for variables, functions, classes, files, and directories. Follow standard TypeScript/JavaScript conventions.
+* **Error Handling**: Implement robust error handling and provide clear error messages.
+
+---
+
+## 3. Data Structures & Schema (Review & Implement) 🧱
+
+You will implement the following data structures. Hashes are typically SHA-256 of the object's content (or its canonical JSON stringification for metadata, tree, commit).
+
+* **Blob Object**:
+    * `hash`: string (ID, e.g., SHA-256 of binary content)
+    * `content`: `Uint8Array` or equivalent binary data representation.
+* **Metadata Object**:
+    * `hash`: string (ID, e.g., SHA-256 of canonical JSON string)
+    * `data`: `Record<string, any>` (JSON serializable key-value pairs)
+* **Tree Object (Directory Snapshot)**:
+    * `hash`: string (ID, e.g., SHA-256 of canonical JSON string of entries)
+    * `entries`: `Record<string, { blob_hash: string, metadata_hash: string, type: 'file' }>`
+        * Key is the path/name of the item.
+        * `type: 'file'` indicates an item with blob data and metadata. (Future: `type: 'tree'` for submodules/subtrees).
+* **Commit Object**:
+    * `hash`: string (ID, e.g., SHA-256 of canonical JSON string of content excluding hash itself)
+    * `tree_hash`: string (references Tree Object)
+    * `parent_hashes`: `string[]` (empty for initial commit, multiple for merge commit)
+    * `author`: `{ name: string, email: string, timestamp: string }` (ISO 8601 for timestamp)
+    * `committer`: `{ name: string, email: string, timestamp: string }` (ISO 8601 for timestamp)
+    * `message`: string
+* **Ref (Branch/Tag Pointer)**:
+    * `name`: string (e.g., `refs/heads/main`, `refs/tags/v1.0`)
+    * `commit_hash`: string (points to a Commit Object hash)
+* **HEAD Pointer (Local)**:
+    * `type`: `'ref'` | `'commit'`
+    * `value`: string (If `type` is `'ref'`, value is a ref name like `refs/heads/main`. If `type` is `'commit'`, value is a commit hash for detached HEAD state).
+
+---
+
+## 4. Tech Stack & Implementation Details 💻⚙️
+
+### 4.1. Server (Bun - `//server` directory)
+
+* **Runtime**: Bun (using TypeScript).
+* **Data Storage**: File system based.
+    * **Root Data Directory**: Configure a base path (e.g., `./.gitblobsdb_data/`).
+    * **Collections as Directories**:
+        * `objects/`: Stores all content-addressable objects (blobs, trees, commits, metadata).
+            * Files named by their hash. e.g., `objects/da/39a3ee5e6b...` (first 2 chars of hash for subdirectory to avoid too many files in one dir, then rest of hash as filename).
+            * Blobs: Raw binary files.
+            * Trees, Commits, Metadata: JSON files (`.json` extension).
+        * `refs/`: Stores branch and tag pointers.
+            * Subdirectories for types: `refs/heads/`, `refs/tags/`.
+            * Files named by branch/tag name (e.g., `refs/heads/main`). Content is the plain text commit hash.
+        * `HEAD`: A single file at the root of the data directory (e.g., `./.gitblobsdb_data/HEAD`) storing the server's current primary branch (e.g., `ref: refs/heads/main`). This is less critical for a server than for a client's working copy but can define a default.
+    * **Indexing (`_index.json`)**:
+        * **Not primary for object retrieval**: Object retrieval is by hash via direct file path.
+        * **Potential use**: For future advanced queries (e.g., list commits by author). Initially, focus on direct hash lookups.
+        * An index for `refs` might be useful if listing all branches frequently becomes slow, but direct directory listing of `refs/heads/` and `refs/tags/` is the starting point.
+* **API**: Implement HTTP server using Bun. Standard JSON request/response bodies.
+
+### 4.2. Client Web (React App - `//client-web` directory)
+
+* **Framework**: React (with TypeScript).
+* **Local Storage**: Use `IndexedDB` for all data (Blobs, Trees, Commits, Metadata, Refs, HEAD).
+    * Blobs: Store as `Blob` objects or `Uint8Array` in `IndexedDB`.
+    * Trees, Commits, Metadata: Store as JavaScript objects (JSON-like) in `IndexedDB` object stores.
+    * Refs: Store as objects mapping ref name to commit hash.
+    * HEAD: Store as a single record indicating the current local branch or detached commit.
+    * Define appropriate `IndexedDB` object stores and indexes (e.g., index objects by hash).
+* **State Management**: Use React Context API or a lightweight state manager (e.g., Zustand).
+
+### 4.3. Project Organization (Monorepo Structure Recommended)
+
+```
+/src/
+├── //cores/                 # Platform-agnostic core logic (TS)
+│    ├── objects/            # Definitions & utils for Blob, Tree, Commit, Metadata
+│    ├── versioning/         # Commit, branch, merge, diff logic
+│    ├── utils/              # Hashing, serialization
+│    └── tests/          # Unit tests for core logic
+├── //interface/             # Shared TypeScript interfaces & types
+│    ├── objects.ts
+│    ├── storage.ts
+│    └── api.ts
+├── //adapter/               # Interface implementations
+│    ├── storage/
+│    │   ├── FileSystemStorageAdapter.ts  # For Bun server
+│    │   └── IndexedDBStorageAdapter.ts   # For browser client
+│    └── // (other adapters like API client adapters if complex)
+├── //server/                # Bun server application
+│    ├── src/
+│    │   ├── api/             # API route handlers
+│    │   ├── services/        # Business logic specific to server
+│    │   └── main.ts          # Server entry point
+│    └── bunfig.toml
+├── //client-web/            # React client application
+│    ├── src/
+│    │   ├── components/
+│    │   ├── hooks/
+│    │   ├── services/        # Client-side services (e.g., local repo ops, API calls)
+│    │   ├── store/           # IndexedDB setup, state management
+│    │   └── App.tsx
+│    └── vite.config.ts (or similar)
+├── package.json             # Root package.json for monorepo (e.g., using pnpm workspaces)
+└── tsconfig.base.json       # Base TypeScript configuration
+```
+
+## 5. Development Workflow & Feature Implementation Steps 🛠️
+
+### 5.1. General Workflow
+
+1.  **Interface (`/interface`)**: Define/update TypeScript interfaces for data structures, function signatures, or API payloads.
+2.  **Core Logic (`/cores`)**: Implement the pure, platform-agnostic logic.
+    * Focus on functions that operate on the defined data structures.
+    * Example: `createCommitObject(treeHash, parentHashes, author, committer, message): ICommit`.
+3.  **Unit Test (`/cores/__tests__`)**: Write unit tests for all core logic. Use a test runner like Vitest or Jest.
+4.  **Adapters (`/adapter`)**: Implement storage adapters (`IStorageAdapter`) for server (file system) and client (IndexedDB).
+    * `IStorageAdapter` methods: `getObject(hash)`, `putObject(object)`, `getRef(name)`, `updateRef(name, commitHash)`, `getHead()`, `setHead(headValue)`.
+5.  **Server Implementation (`//server`)**:
+    * Use `FileSystemStorageAdapter`.
+    * Implement API endpoints, using core logic functions and the storage adapter.
+6.  **Client Implementation (`//client-web`)**:
+    * Use `IndexedDBStorageAdapter`.
+    * Build UI components.
+    * Implement client-side logic to interact with its local `IndexedDB` repository and the server API.
+
+### 5.2. Key Feature Implementation Guidelines
+
+* **Object Hashing (`/cores/utils/hash.ts`)**:
+    * Implement SHA-256 hashing for binary data (Blobs).
+    * Implement SHA-256 hashing for JSON objects (Trees, Commits, Metadata) by first getting a stable, canonical JSON string representation.
+* **Local Commit (Client-side & Core logic)**:
+    1.  Client gathers changes from its working state.
+    2.  For each changed/new file, create Blob and Metadata objects, store them via `IndexedDBStorageAdapter`, get their hashes.
+    3.  Construct a new Tree object using these hashes. Store it, get its hash.
+    4.  Get current local HEAD (parent commit hash/es).
+    5.  Use `/cores/versioning/commit.ts` to create a new Commit object.
+    6.  Store the new Commit object via `IndexedDBStorageAdapter`.
+    7.  Update the local branch ref (in `IndexedDB`) to point to the new commit hash.
+    8.  Update local HEAD.
+    * This entire process is LOCAL FIRST.
+* **Local Branching (Client-side & Core logic)**:
+    * `createBranch(branchName, startCommitHash)`: Creates a new ref locally (e.g., `refs/heads/new-feature` -> `startCommitHash`).
+    * `switchBranch(branchName)`: Updates local HEAD to point to the specified branch ref.
+* **API Endpoints (Server - `//server/src/api/`)**:
+    * **`GET /blob/:hash`**:
+        * Input: `hash` (string)
+        * Action: Retrieve blob file from `objects/{first_two_chars_of_hash}/{rest_of_hash}` using `FileSystemStorageAdapter`.
+        * Response: Binary data (`application/octet-stream`).
+    * **`GET /object/:hash`** (For Tree, Commit, Metadata):
+        * Input: `hash` (string)
+        * Action: Retrieve JSON file from `objects/...` using `FileSystemStorageAdapter`.
+        * Response: JSON data (`application/json`).
+    * **`POST /fetch`**:
+        * Input: `{ known_refs: Record<string, string>, client_wants_branches?: string[] }` (Client sends its current understanding of remote refs and specific branches it's interested in).
+        * Action:
+            1.  Server identifies commits and associated objects (Trees, Blobs, Metadata) client needs by comparing `known_refs` with its own.
+            2.  Server determines the necessary objects to send.
+        * Response: `{ new_refs: Record<string, string>, objects_to_send: { hash: string, type: 'blob'|'tree'|'commit'|'metadata' }[] }` (Or a more optimized packfile concept later). Client will then request objects it doesn't have via `/object/:hash` or `/blob/:hash` or a batch endpoint.
+    * **`POST /push`**:
+        * Input: `{ branch_ref: string, new_commit_hash: string, objects: { hash: string, type: 'blob'|'tree'|'commit'|'metadata', content_if_needed?: any }[] }` (Client sends objects the server might not have).
+        * Action:
+            1.  Server validates if `new_commit_hash` is a valid successor (e.g., fast-forward) for the given `branch_ref` on the server. (Handle non-fast-forward with rejection for now).
+            2.  Server stores all received objects using `FileSystemStorageAdapter` if they don't exist.
+            3.  Server updates its branch ref.
+        * Response: `{ success: boolean, message?: string }`.
+    * **`GET /pull`** (This is a client-side orchestration):
+        1.  Client calls `/fetch` to get latest state and necessary objects from server.
+        2.  Client stores these objects locally.
+        3.  Client performs a merge (or rebase) locally:
+            * Uses `/cores/versioning/merge.ts` (e.g., `threeWayMerge(...)` or `findCommonAncestor(...)`).
+            * Detects conflicts (e.g., same path in Tree points to different blob hashes). *Initial conflict handling: report to user; auto-resolve not in V1.*
+            * If successful merge, create a new local merge commit.
+* **Local HEAD Revision (Client-side)**:
+    * Managed in `IndexedDB`. Essential for knowing the current branch/commit context for local operations.
+* **"Patched base on revision diff" (Object Transfer)**:
+    * This is realized by the `/fetch` and `/push` mechanisms. The "diff" is the set of objects (commits, trees, blobs, metadata) that one peer has and the other needs. The system identifies these objects by traversing the commit graph from known common ancestors.
+
+---
+
+## 6. Testing Mandate 🧪
+
+* **`/cores`**: MUST have extensive unit tests for all functions. Aim for high code coverage. Use a framework like Vitest.
+    * Test object creation, hashing, serialization.
+    * Test versioning logic (commit creation, branch manipulation, merge conflict detection basics).
+* **`/adapter`**: Integration tests for adapters (e.g., can `FileSystemStorageAdapter` correctly read/write objects?). Mock dependencies where appropriate.
+* **API Endpoints (`//server`)**: End-to-end tests or integration tests for API endpoints.
+
+---
+
+This structured guideline should provide a clear path for the AI agent. Iterative development and focusing on one feature at a time, ensuring core logic is solid before building on top, will be crucial.
