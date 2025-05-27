@@ -61,3 +61,14 @@ export interface IObject {
   hash: string;
   content: Uint8Array | Record<string, any>;
 }
+
+export interface ITreeSnapshot {
+  commitHash: string;
+  treeData: Record<
+    string,
+    ITreeEntry & {
+      metadata: IMetadata["data"];
+      blob: IBlob["content"];
+    }
+  >;
+}

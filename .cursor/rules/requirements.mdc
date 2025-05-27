@@ -204,6 +204,31 @@ Note
         - Maximum depth exceeded: When the commit chain is too long (prevents stack overflow)
 
 
+* **"Tree Snapshot Transfer**:
+    Given
+        - Client, Server have a local storage
+        - Client only want to fetch tree and data a revision with `commitHash`
+    Process
+        - Server fetch all data at `commitHash`. formated as output
+    Input
+        - commitHash
+    Output
+        - TreeSnapshot {
+            commitHash: string
+            treeData: {
+                fileId: ITreeEntry & {
+                    metadata: IMetadata["data"]
+                    blob: IBlob["data"]
+                }
+            }
+        }
+    Error Cases
+        - Commit not found: When either fromCommitHash or toCommitHash doesn't exist
+        - Tree not found: When a tree referenced by a commit doesn't exist
+        - Blob not found: When a blob referenced by a tree doesn't exist
+        - Metadata not found: When metadata referenced by a tree doesn't exist
+
+
 * **API Endpoints (Server - `//server/src/api/`)**:
     * **`GET /blob/:hash`**:
         * Input: `hash` (string)
