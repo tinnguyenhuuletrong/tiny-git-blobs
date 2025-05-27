@@ -1,4 +1,4 @@
-import type { ITree, ITreeEntry } from "../../../interface/src";
+import type { ITree, ITreeEntry } from "@gitblobsdb/interface";
 
 /**
  * Represents a merge conflict in a tree

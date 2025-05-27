@@ -1,9 +1,4 @@
-import type {
-  IBlob,
-  ICommit,
-  IMetadata,
-  ITree,
-} from "../../../interface/src/objects";
+import type { IBlob, ICommit, IMetadata, ITree } from "@gitblobsdb/interface";
 import { hashBlob, hashCommit, hashMetadata, hashTree } from "../utils/hash";
 
 /**

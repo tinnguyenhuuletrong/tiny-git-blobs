@@ -1,4 +1,4 @@
-import type { ICommit, IHead, IRef } from "../../../interface/src/objects";
+import type { IHead, IRef } from "@gitblobsdb/interface";
 
 /**
  * Create a new branch reference

@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTreeSnapshot } from "../snapshot";
-import {
-  IBlob,
-  ICommit,
-  IMetadata,
-  ITree,
-} from "../../../../interface/src/objects";
-import { MemoryStorageAdapter } from "../../../../adapter/src/storage/MemoryStorageAdapter";
+import { IBlob, ICommit, IMetadata, ITree } from "@gitblobsdb/interface";
+import { MemoryStorageAdapter } from "@gitblobsdb/adapter";
 
 describe("createTreeSnapshot", () => {
   let storage: MemoryStorageAdapter;

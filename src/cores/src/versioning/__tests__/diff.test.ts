@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { findRevisionDiff } from "../diff";
-import { MemoryStorageAdapter } from "@gitblobsdb/adapter/src";
-import type {
-  IBlob,
-  ITree,
-  ICommit,
-  IMetadata,
-} from "@gitblobsdb/interface/src";
+import { MemoryStorageAdapter } from "@gitblobsdb/adapter";
+import type { IBlob, ITree, ICommit, IMetadata } from "@gitblobsdb/interface";
 
 describe("findRevisionDiff", () => {
   let storage: MemoryStorageAdapter;

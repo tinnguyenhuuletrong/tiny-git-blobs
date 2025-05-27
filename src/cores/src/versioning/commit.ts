@@ -1,4 +1,4 @@
-import type { ICommit } from "../../../interface/src/objects";
+import type { ICommit } from "@gitblobsdb/interface";
 import { createCommit } from "../objects/create";
 
 /**

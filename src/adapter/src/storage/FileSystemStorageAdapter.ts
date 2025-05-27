@@ -19,7 +19,7 @@ import {
   type IStorageAdapter,
   AllObjectTypes,
   ObjectType,
-} from "@gitblobsdb/interface/src";
+} from "@gitblobsdb/interface";
 
 export class FileSystemStorageAdapter implements IStorageAdapter {
   private readonly basePath: string;

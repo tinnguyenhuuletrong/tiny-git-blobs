@@ -7,8 +7,7 @@ import {
   type IRef,
   type ITree,
   type IStorageAdapter,
-  type ObjectType,
-} from "@gitblobsdb/interface/src";
+} from "@gitblobsdb/interface";
 
 export class MemoryStorageAdapter implements IStorageAdapter {
   private objects: Map<string, IObject> = new Map();

@@ -1,13 +1,11 @@
 import type {
   IStorageAdapter,
-  IObject,
   ICommit,
   ITree,
   IBlob,
   IMetadata,
-  ObjectType,
   ITreeEntry,
-} from "@gitblobsdb/interface/src";
+} from "@gitblobsdb/interface";
 
 export interface DiffResult {
   commitChains: string[]; // Sorted array of commit hashes from fromCommitHash to toCommitHash

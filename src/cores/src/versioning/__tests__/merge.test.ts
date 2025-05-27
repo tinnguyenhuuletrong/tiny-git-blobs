@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mergeTrees, hasMergeConflicts, getConflictedPaths } from "../merge";
-import type { ITree } from "../../../../interface/src";
+import type { ITree } from "@gitblobsdb/interface";
 
 describe("Merge Utilities", () => {
   describe("mergeTrees", () => {

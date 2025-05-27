@@ -1,11 +1,4 @@
-import {
-  IBlob,
-  ICommit,
-  IMetadata,
-  ITree,
-  ITreeSnapshot,
-} from "../../../interface/src/objects";
-import { IStorageAdapter } from "../../../interface/src/storage";
+import { IStorageAdapter, ITreeSnapshot } from "@gitblobsdb/interface";
 
 /**
  * Creates a tree snapshot for a given commit hash
