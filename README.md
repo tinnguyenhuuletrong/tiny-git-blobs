@@ -20,7 +20,27 @@ A NoSQL database system with Git-like versioning features.
 ├── adapter/              # Interface implementations
 ├── server/              # Bun server application
 └── client-web/          # React client application
+└── cli/                 # Cli application
 ```
+
+## CLI Modules
+
+The CLI modules provide a command-line interface for interacting with the GitBlobsDB. You can perform various operations directly from the terminal, such as:
+
+- **Initialize a new database**: Set up a new instance of GitBlobsDB.
+- **Fetch data**: Retrieve data from the database.
+- **Push changes**: Save changes to the database.
+- **Pull updates**: Synchronize your local database with remote changes.
+
+### Usage
+
+To use the CLI, navigate to the project directory and run:
+
+```bash
+bun run cli [command] [options]
+```
+
+Replace `[command]` with the desired operation (e.g., `init`, `fetch`, `push`, `pull`) and `[options]` with any necessary parameters.
 
 ## Development Setup
 

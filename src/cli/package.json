@@ -1,0 +1,21 @@
+{
+  "name": "@gitblobsdb/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "build": "bun build ./src/main.ts --outdir ./dist",
+    "dev": "bun run --watch src/main.ts"
+  },
+  "dependencies": {
+    "@gitblobsdb/interface": "workspace:*",
+    "@gitblobsdb/cores": "workspace:*",
+    "@gitblobsdb/adapter": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^1.2.2",
+    "typescript": "^5.3.3",
+    "@types/bun": "latest"
+  }
+}

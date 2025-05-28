@@ -12,7 +12,8 @@
   "scripts": {
     "test": "bun run --cwd src/cores test && bun run --cwd src/interface test && bun run --cwd src/adapter test && bun run --cwd src/server test && bun run --cwd src/client-web test",
     "build": "bun run --cwd src/cores build && bun run --cwd src/interface build && bun run --cwd src/adapter build && bun run --cwd src/server build && bun run --cwd src/client-web build",
-    "dev": "bun run --cwd src/server dev & bun run --cwd src/client-web dev"
+    "dev": "bun run --cwd src/server dev & bun run --cwd src/client-web dev",
+    "cli": "bun run src/cli/src/main"
   },
   "devDependencies": {
     "typescript": "^5.3.3",
