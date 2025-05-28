@@ -1,13 +1,5 @@
 import { join } from "path";
-import {
-  mkdir,
-  readFile,
-  writeFile,
-  readdir,
-  unlink,
-  access,
-} from "fs/promises";
-import { constants } from "fs";
+import { mkdir, readFile, writeFile, exists, unlink } from "fs/promises";
 import {
   type IBlob,
   type ICommit,
@@ -17,27 +9,17 @@ import {
   type IRef,
   type ITree,
   type IStorageAdapter,
-  AllObjectTypes,
-  ObjectType,
 } from "@gitblobsdb/interface";
 
 export class FileSystemStorageAdapter implements IStorageAdapter {
   private readonly basePath: string;
   private readonly objectsPath: string;
-  private readonly treesPath: string;
-  private readonly commitsPath: string;
   private readonly metadataPath: string;
-  private readonly refsPath: string;
-  private readonly headPath: string;
 
   constructor(basePath: string) {
     this.basePath = basePath;
     this.objectsPath = join(basePath, "objects");
-    this.treesPath = join(basePath, "trees");
-    this.commitsPath = join(basePath, "commits");
     this.metadataPath = join(basePath, "metadata");
-    this.refsPath = join(basePath, "refs");
-    this.headPath = join(basePath, "HEAD");
   }
 
   private async ensureDirectoryExists(path: string): Promise<void> {
@@ -50,125 +32,69 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
     }
   }
 
-  private getObjectPath(hash: string): string {
-    return join(this.objectsPath, hash);
-  }
-
-  private getTreePath(hash: string): string {
-    return join(this.treesPath, hash);
-  }
-
-  private getCommitPath(hash: string): string {
-    return join(this.commitsPath, hash);
-  }
-
-  private getMetadataPath(hash: string): string {
-    return join(this.metadataPath, hash);
-  }
-
-  private async writeObject(object: IObject): Promise<void> {
-    let path: string;
-    let dirPath: string;
-
-    switch (object.type) {
-      case "blob":
-        path = this.getObjectPath(object.hash);
-        dirPath = this.objectsPath;
-        break;
-      case "tree":
-        path = this.getTreePath(object.hash);
-        dirPath = this.treesPath;
-        break;
-      case "commit":
-        path = this.getCommitPath(object.hash);
-        dirPath = this.commitsPath;
-        break;
-      case "metadata":
-        path = this.getMetadataPath(object.hash);
-        dirPath = this.metadataPath;
-        break;
-    }
-
-    await this.ensureDirectoryExists(dirPath);
-
-    if (object.type === "blob") {
-      await writeFile(path, object.content as Uint8Array);
-    } else {
-      await writeFile(path, JSON.stringify(object.content, null, 2));
-    }
-  }
-
-  private async readObject(
-    hash: string,
-    type: ObjectType
-  ): Promise<Uint8Array | Record<string, any> | null> {
-    try {
-      let path: string;
-      switch (type) {
-        case "blob":
-          path = this.getObjectPath(hash);
-          break;
-        case "tree":
-          path = this.getTreePath(hash);
-          break;
-        case "commit":
-          path = this.getCommitPath(hash);
-          break;
-        case "metadata":
-          path = this.getMetadataPath(hash);
-          break;
-      }
-
-      const content = await readFile(path);
-
-      if (type === "blob") {
-        return new Uint8Array(content);
-      } else {
-        return JSON.parse(content.toString());
-      }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return null;
-      }
-      throw error;
-    }
-  }
-
   async getObject(hash: string): Promise<IObject | null> {
-    // Try each type until we find a match
-    for (const type of AllObjectTypes) {
-      const content = await this.readObject(hash, type);
-      if (content !== null) {
-        return { type, hash, content };
-      }
+    const loadPath = join(this.objectsPath, `${hash}.json`);
+    const hasExist = await exists(loadPath);
+    if (!hasExist) {
+      return null;
+    }
+    const data = await readFile(loadPath);
+    return JSON.parse(data.toString()) as IObject;
+  }
+
+  async putObject(object: IObject): Promise<void> {
+    await this.ensureDirectoryExists(this.objectsPath);
+
+    const savePath = join(this.objectsPath, `${object.hash}.json`);
+    await writeFile(savePath, JSON.stringify(object));
+  }
+
+  async hasObject(hash: string): Promise<boolean> {
+    const loadPath = join(this.objectsPath, `${hash}.json`);
+    const hasExist = await exists(loadPath);
+    if (!hasExist) {
+      return false;
+    }
+    return true;
+  }
+
+  async deleteObject(hash: string): Promise<void> {
+    const loadPath = join(this.objectsPath, `${hash}.json`);
+    await unlink(loadPath);
+  }
+
+  async getBlob(hash: string): Promise<IBlob | null> {
+    const obj = await this.getObject(hash);
+    if (obj?.type === "blob") {
+      return {
+        hash: obj.hash,
+        content: Uint8Array.from(obj.content as Uint8Array),
+      };
     }
     return null;
   }
 
-  async putObject(object: IObject): Promise<void> {
-    await this.writeObject(object);
-  }
-
-  async getBlob(hash: string): Promise<IBlob | null> {
-    const content = await this.readObject(hash, "blob");
-    return content ? ({ hash, content } as IBlob) : null;
-  }
-
   async putBlob(blob: IBlob): Promise<void> {
-    await this.writeObject({
+    await this.putObject({
       type: "blob",
       hash: blob.hash,
-      content: blob.content,
+      content: Array.from(blob.content),
     });
   }
 
   async getTree(hash: string): Promise<ITree | null> {
-    const content = await this.readObject(hash, "tree");
-    return content ? ({ hash, entries: content } as ITree) : null;
+    const obj = await this.getObject(hash);
+    if (obj?.type === "tree") {
+      return {
+        hash: obj.hash,
+        entries: obj.content as Record<string, any>,
+      };
+    }
+    return null;
   }
 
   async putTree(tree: ITree): Promise<void> {
-    await this.writeObject({
+    await this.putObject({
       type: "tree",
       hash: tree.hash,
       content: tree.entries,
@@ -176,159 +102,111 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
   }
 
   async getCommit(hash: string): Promise<ICommit | null> {
-    const content = await this.readObject(hash, "commit");
-    if (!content) return null;
-    return { hash, ...content } as ICommit;
+    const obj = await this.getObject(hash);
+    if (obj?.type === "commit") {
+      const content = obj.content as Record<string, any>;
+      return {
+        hash: obj.hash,
+        tree_hash: content.tree_hash,
+        parent_hashes: content.parent_hashes,
+        author: content.author,
+        committer: content.committer,
+        message: content.message,
+      };
+    }
+    return null;
   }
 
   async putCommit(commit: ICommit): Promise<void> {
     const { hash, ...content } = commit;
-    await this.writeObject({ type: "commit", hash, content });
+    await this.putObject({
+      type: "commit",
+      hash,
+      content,
+    });
   }
 
   async getMetadata(hash: string): Promise<IMetadata | null> {
-    const content = await this.readObject(hash, "metadata");
-    return content ? { hash, data: content } : null;
+    const obj = await this.getObject(hash);
+    if (obj?.type === "metadata") {
+      return {
+        hash: obj.hash,
+        data: obj.content as Record<string, any>,
+      };
+    }
+    return null;
   }
 
   async putMetadata(metadata: IMetadata): Promise<void> {
-    await this.writeObject({
+    await this.putObject({
       type: "metadata",
       hash: metadata.hash,
       content: metadata.data,
     });
   }
 
-  private getRefPath(name: string): string {
-    return join(this.refsPath, name);
+  private async loadRefsFromDisk(): Promise<IRef[]> {
+    const loadPath = join(this.metadataPath, "refs.json");
+    const hasExist = await exists(loadPath);
+    if (!hasExist) {
+      return [];
+    }
+    const data = await readFile(loadPath);
+    return JSON.parse(data.toString()) as IRef[];
+  }
+
+  private async saveRefsToDisk(refs: IRef[]): Promise<void> {
+    await this.ensureDirectoryExists(this.metadataPath);
+    const savePath = join(this.metadataPath, "refs.json");
+
+    await writeFile(savePath, JSON.stringify(refs));
   }
 
   async getRef(name: string): Promise<IRef | null> {
-    try {
-      const path = this.getRefPath(name);
-      const commitHash = (await readFile(path)).toString().trim();
-      return { name, commit_hash: commitHash };
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return null;
-      }
-      throw error;
-    }
+    const refs = await this.listRefs();
+    return refs.find((itm) => itm.name === name) ?? null;
   }
 
   async updateRef(name: string, commitHash: string): Promise<void> {
-    const path = this.getRefPath(name);
-    await this.ensureDirectoryExists(
-      join(this.refsPath, name.split("/").slice(0, -1).join("/"))
-    );
-    await writeFile(path, commitHash);
+    const refs = await this.listRefs();
+    const itm = refs.find((itm) => itm.name === name);
+    if (itm) itm.commit_hash = commitHash;
+    else {
+      refs.push({
+        name,
+        commit_hash: commitHash,
+      });
+    }
+
+    await this.saveRefsToDisk(refs);
   }
 
   async listRefs(): Promise<IRef[]> {
-    const refs: IRef[] = [];
-    const refsDir = join(this.refsPath);
-    await this.ensureDirectoryExists(refsDir);
-
-    const files = await readdir(refsDir, { recursive: true });
-    for (const file of files) {
-      const name = file;
-      const ref = await this.getRef(name);
-      if (ref) {
-        refs.push(ref);
-      }
-    }
-
-    return refs;
+    return this.loadRefsFromDisk();
   }
 
   async getHead(): Promise<IHead | null> {
-    try {
-      const content = (await readFile(this.headPath)).toString().trim();
-      if (content.startsWith("ref: ")) {
-        return { type: "ref", value: content.slice(5) };
-      } else {
-        return { type: "commit", value: content };
-      }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return null;
-      }
-      throw error;
+    const loadPath = join(this.metadataPath, "head.json");
+    const hasExist = await exists(loadPath);
+    if (!hasExist) {
+      return null;
     }
+    const data = await readFile(loadPath);
+    return JSON.parse(data.toString()) as IHead;
   }
 
   async setHead(head: IHead): Promise<void> {
-    const content = head.type === "ref" ? `ref: ${head.value}` : head.value;
-    await writeFile(this.headPath, content);
-  }
-
-  async hasObject(hash: string): Promise<boolean> {
-    // Try each type until we find a match
-    for (const type of AllObjectTypes) {
-      let path: string;
-      switch (type) {
-        case "blob":
-          path = this.getObjectPath(hash);
-          break;
-        case "tree":
-          path = this.getTreePath(hash);
-          break;
-        case "commit":
-          path = this.getCommitPath(hash);
-          break;
-        case "metadata":
-          path = this.getMetadataPath(hash);
-          break;
-      }
-      try {
-        await access(path, constants.F_OK);
-        return true;
-      } catch (error) {
-        continue;
-      }
-    }
-    return false;
-  }
-
-  async deleteObject(hash: string): Promise<void> {
-    // Try each type until we find and delete the object
-    for (const type of AllObjectTypes) {
-      let path: string;
-      switch (type) {
-        case "blob":
-          path = this.getObjectPath(hash);
-          break;
-        case "tree":
-          path = this.getTreePath(hash);
-          break;
-        case "commit":
-          path = this.getCommitPath(hash);
-          break;
-        case "metadata":
-          path = this.getMetadataPath(hash);
-          break;
-      }
-      try {
-        await unlink(path);
-        return; // Object found and deleted
-      } catch (error) {
-        continue;
-      }
-    }
+    await this.ensureDirectoryExists(this.metadataPath);
+    const savePath = join(this.metadataPath, "head.json");
+    await writeFile(savePath, JSON.stringify(head));
   }
 }
 
 /*
 basePath/
-├── objects/          # Binary blobs
+├── objects/          # Binary blobs | Tree objects | Commit objects | Metadata objects
 │   └── [hash]
-├── trees/           # Tree objects
-│   └── [hash]
-├── commits/         # Commit objects
-│   └── [hash]
-├── metadata/        # Metadata objects
-│   └── [hash]
-├── refs/           # References
-│   └── [branch-name]
-└── HEAD            # Current HEAD reference
+├── metadata/         # high level metadata
+│   └── head.json
+│   └── refs.json
 */
