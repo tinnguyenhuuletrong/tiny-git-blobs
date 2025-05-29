@@ -29,18 +29,23 @@ The CLI modules provide a command-line interface for interacting with the GitBlo
 
 - **Initialize a new database**: Set up a new instance of GitBlobsDB.
 - **Fetch data**: Retrieve data from the database.
-- **Push changes**: Save changes to the database.
-- **Pull updates**: Synchronize your local database with remote changes.
 
 ### Usage
 
 To use the CLI, navigate to the project directory and run:
 
 ```bash
-bun run cli [command] [options]
+bun run cli --storagePath <path to storage folder>
 ```
 
-Replace `[command]` with the desired operation (e.g., `init`, `fetch`, `push`, `pull`) and `[options]` with any necessary parameters.
+### Available Commands
+
+- **help**: Display available commands and their usage.
+- **head**: Fetch and display the current head commit.
+- **add <fileName> <fileContent>**: Add a new file with the specified content.
+- **getBlob <blobHash>**: Retrieve and display the content of a blob by its hash.
+- **history**: Display the commit history.
+- **snapshot [commitHash]**: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).
 
 ## Development Setup
 

@@ -17,6 +17,21 @@ import {
   ITreeSnapshot,
 } from "@gitblobsdb/interface";
 
+// Define color function
+const ASCII_COLORS = {
+  reset: "\x1b[0m",
+  gray: "\x1b[37m",
+  yellow: "\x1b[33m",
+  green: "\x1b[32m",
+  cyan: "\x1b[36m",
+  blue: "\x1b[34m",
+} as const;
+function color(colorName: keyof typeof ASCII_COLORS, content: string): string {
+  return `${ASCII_COLORS[colorName] || ASCII_COLORS.reset}${content}${
+    ASCII_COLORS.reset
+  }`;
+}
+
 function parseOptions() {
   const { values, positionals } = parseArgs({
     args: Bun.argv,
@@ -34,23 +49,35 @@ function parseOptions() {
 }
 
 function printHelp() {
-  console.log("\x1b[37mAvailable commands:\x1b[0m");
+  console.log(color("gray", "Available commands:"));
   console.log(
-    "\x1b[37m\thead: Fetch and display the current head commit.\x1b[0m"
+    color("gray", "\thead: Fetch and display the current head commit.")
   );
   console.log(
-    "\x1b[37m\tadd <fileName> <fileContent>: Add a new file with the specified content.\x1b[0m"
+    color(
+      "gray",
+      "\tadd <fileName> <fileContent>: Add a new file with the specified content."
+    )
   );
   console.log(
-    "\x1b[37m\tgetBlob <blobHash>: Retrieve and display the content of a blob by its hash.\x1b[0m"
+    color(
+      "gray",
+      "\tgetBlob <blobHash>: Retrieve and display the content of a blob by its hash."
+    )
   );
-  console.log("\x1b[37m\thistory: Display the commit history.\x1b[0m");
-  console.log("\x1b[37m\thelp: Display this help message.\x1b[0m");
+  console.log(color("gray", "\thistory: Display the commit history."));
+  console.log(color("gray", "\thelp: Display this help message."));
+  console.log(
+    color(
+      "gray",
+      "\tsnapshot [commitHash]: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided)."
+    )
+  );
 }
 
 function printCommitHistory(newToOldCommits: ICommit[]) {
   newToOldCommits.forEach((commit) => {
-    console.log(`commit \x1b[33m${commit.hash}\x1b[0m`);
+    console.log(`commit ${color("yellow", commit.hash)}`);
     console.log(`Author: ${commit.author.name} <${commit.author.email}>`);
     console.log(`Date: ${new Date(commit.author.timestamp).toLocaleString()}`);
     console.log(`\n    ${commit.message}\n`);
@@ -58,16 +85,16 @@ function printCommitHistory(newToOldCommits: ICommit[]) {
 }
 
 function printSnapshot(snapshot: ITreeSnapshot) {
-  console.log(`commitHash: \x1b[33m${snapshot.commitHash}\x1b[0m`); // Yellow color for commitHash
+  console.log(`commitHash: ${color("yellow", snapshot.commitHash)}`); // Yellow color for commitHash
 
   const textDecoder = new TextDecoder();
 
   for (const [fileName, entry] of Object.entries(snapshot.treeData)) {
     console.log(
-      `- \x1b[32m${fileName}\x1b[0m - \x1b[37m${entry.blob_hash}\x1b[0m`
+      `- ${color("green", fileName)} - ${color("gray", entry.blob_hash)}`
     ); // Green color for fileName, Gray for blobHash
     console.log(
-      `   - \x1b[36mmetadata\x1b[0m: ${JSON.stringify(entry.metadata)}`
+      `   - ${color("cyan", "metadata")}: ${JSON.stringify(entry.metadata)}`
     );
 
     // Limit file content to 100 characters
@@ -76,7 +103,7 @@ function printSnapshot(snapshot: ITreeSnapshot) {
       rawContent.length > 100
         ? rawContent.substring(0, 100) + "..."
         : rawContent;
-    console.log(`   - \x1b[36mtextBlob\x1b[0m: ${content}`);
+    console.log(`   - ${color("cyan", "textBlob")}: ${content}`);
   }
 }
 
@@ -86,16 +113,16 @@ async function main() {
 
   console.log("CLI app");
   console.log(
-    "\x1b[34m\t-storagePath:\x1b[0m",
+    color("blue", "\t-storagePath:"),
     resolve(appOptions.storagePath)
   );
   printHelp();
 
   // change stdin color
-  process.stdout.write("\x1b[34m> ");
+  process.stdout.write(color("blue", "> "));
   for await (const line of console) {
     // reset color for stdout
-    process.stdout.write("\n\x1b[0m");
+    process.stdout.write("\n" + color("reset", ""));
 
     const [cmd, ...args] = line.split(" ");
     switch (cmd) {
@@ -112,23 +139,23 @@ async function main() {
         const fileName = args[0];
         const fileContent = args.slice(1).join(" ");
         if (!(fileName && fileContent)) {
-          console.warn("\x1b[37musage: add <fileName> <fileContent>\x1b[0m");
+          console.warn(color("gray", "usage: add <fileName> <fileContent>"));
           break;
         }
         const commit = await addFile(storage, fileName, fileContent);
-        console.log(`done. head commit: \x1b[33m${commit.hash}\x1b[0m`);
+        console.log(`done. head commit: ${color("yellow", commit.hash)}`);
         break;
       }
       case "getBlob": {
         const blobHash = args[0];
         const hasObject = await storage.hasObject(blobHash);
         if (!hasObject) {
-          console.error(`Blob with hash ${blobHash} not found`);
+          console.error(color("gray", `Blob with hash ${blobHash} not found`));
           break;
         }
         const blobObj = await storage.getBlob(blobHash);
         if (!blobObj) {
-          console.error(`Blob with hash ${blobHash} not found`);
+          console.error(color("gray", `Blob with hash ${blobHash} not found`));
           break;
         }
         const decoder = new TextDecoder();
@@ -146,26 +173,35 @@ async function main() {
           commitHash = (await fetchCommitHashAtHead(storage)) ?? "";
         }
         if (!commitHash) {
-          console.error(`Could not resolve commitHash: ${commitHash}`);
+          console.error(
+            color(
+              "gray",
+              `Could not resolve commitHash: ${color("yellow", commitHash)}`
+            )
+          );
           break;
         }
-        const snapshot = await SnapshotHelper.createTreeSnapshot(
-          commitHash,
-          storage
-        );
+        try {
+          const snapshot = await SnapshotHelper.createTreeSnapshot(
+            commitHash,
+            storage
+          );
 
-        // console.dir(snapshot, { depth: 10 });
-        printSnapshot(snapshot);
+          printSnapshot(snapshot);
+        } catch (err: any) {
+          console.warn(color("gray", err.message));
+        }
+
         break;
       }
       default:
-        console.warn("unknown command", cmd);
+        console.warn(color("gray", "unknown command"), color("yellow", cmd));
         printHelp();
         break;
     }
 
     // change stdin color
-    process.stdout.write("\x1b[34m> ");
+    process.stdout.write(color("blue", "> "));
   }
 }
 
@@ -247,11 +283,13 @@ async function fetchHead(storage: IStorageAdapter): Promise<{
 
   const commitHash = head.value;
   const commitObj = await storage.getCommit(commitHash);
-  if (!commitObj) throw new Error(`Commit at head not found: ${commitHash}`);
+  if (!commitObj)
+    throw new Error(color("gray", `Commit at head not found: ${commitHash}`));
 
   const treeHash = commitObj.tree_hash;
   const treeObj = await storage.getTree(commitObj.tree_hash);
-  if (!treeObj) throw new Error(`Tree at head not found: ${treeHash}`);
+  if (!treeObj)
+    throw new Error(color("gray", `Tree at head not found: ${treeHash}`));
 
   return {
     tree: treeObj,
