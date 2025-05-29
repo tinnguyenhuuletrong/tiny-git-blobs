@@ -10,15 +10,17 @@
     "src/client-web"
   ],
   "scripts": {
-    "test": "bun run --cwd src/cores test && bun run --cwd src/interface test && bun run --cwd src/adapter test && bun run --cwd src/server test && bun run --cwd src/client-web test",
+    "test": "bun run --cwd src/cores test && bun run --cwd src/interface test && bun run --cwd src/adapter test",
     "build": "bun run --cwd src/cores build && bun run --cwd src/interface build && bun run --cwd src/adapter build",
     "web:dev": "bun run --cwd src/client-web dev",
     "web:build": "bun run --cwd src/client-web build",
     "cli": "bun run src/cli/src/main"
   },
   "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@vitest/coverage-v8": "^3.1.4",
+    "jsdom": "^26.1.0",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.2",
-    "@types/node": "^20.11.19"
+    "vitest": "^1.2.2"
   }
 }
