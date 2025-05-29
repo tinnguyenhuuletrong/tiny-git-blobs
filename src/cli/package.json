@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "bun test",
-    "build": "bun build ./src/main.ts --outdir ./dist",
+    "build": "bun build ./src/main.ts --outdir ./dist --target node",
     "dev": "bun run --watch src/main.ts"
   },
   "dependencies": {

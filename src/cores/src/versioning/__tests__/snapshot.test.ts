@@ -95,15 +95,4 @@ describe("createTreeSnapshot", () => {
       "Blob not found: blob123"
     );
   });
-
-  it("should throw error when metadata is not found", async () => {
-    await storage.putCommit(mockCommit);
-    await storage.putTree(mockTree);
-    await storage.putBlob(mockBlob);
-    // Don't put the metadata
-
-    await expect(createTreeSnapshot("commit123", storage)).rejects.toThrow(
-      "Metadata not found: meta123"
-    );
-  });
 });

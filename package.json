@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "bun run --cwd src/cores test && bun run --cwd src/interface test && bun run --cwd src/adapter test && bun run --cwd src/server test && bun run --cwd src/client-web test",
-    "build": "bun run --cwd src/cores build && bun run --cwd src/interface build && bun run --cwd src/adapter build && bun run --cwd src/server build && bun run --cwd src/client-web build",
+    "build": "bun run --cwd src/cores build && bun run --cwd src/interface build && bun run --cwd src/adapter build && bun run --cwd src/server build && bun run --cwd src/client-web build && bun run --cwd src/cli build",
     "dev": "bun run --cwd src/server dev & bun run --cwd src/client-web dev",
     "cli": "bun run src/cli/src/main"
   },

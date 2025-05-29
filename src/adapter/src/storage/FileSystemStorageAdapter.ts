@@ -1,5 +1,5 @@
 import { join } from "path";
-import { mkdir, readFile, writeFile, exists, unlink } from "fs/promises";
+import { mkdir, readFile, writeFile, access, unlink } from "fs/promises";
 import {
   type IBlob,
   type ICommit,
@@ -10,6 +10,16 @@ import {
   type ITree,
   type IStorageAdapter,
 } from "@gitblobsdb/interface";
+import { R_OK } from "constants";
+
+async function exists(diskPath: string): Promise<boolean> {
+  try {
+    await access(diskPath, R_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export class FileSystemStorageAdapter implements IStorageAdapter {
   private readonly basePath: string;
