@@ -37,14 +37,11 @@ export async function createTreeSnapshot(
     if (!blob) {
       throw new Error(`Blob not found: ${entry.blob_hash}`);
     }
-    if (!metadata) {
-      throw new Error(`Metadata not found: ${entry.metadata_hash}`);
-    }
 
     // Add the entry to the tree data
     treeData[path] = {
       ...entry,
-      metadata: metadata.data,
+      metadata: metadata?.data ?? {},
       blob: blob.content,
     };
   }

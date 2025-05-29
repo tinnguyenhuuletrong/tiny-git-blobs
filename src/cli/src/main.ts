@@ -6,6 +6,7 @@ import {
   createBlob,
   createCommit,
   createMetadata,
+  SnapshotHelper,
 } from "@gitblobsdb/cores";
 import { cwd } from "process";
 import {
@@ -13,6 +14,7 @@ import {
   IStorageAdapter,
   ITree,
   ITreeEntry,
+  ITreeSnapshot,
 } from "@gitblobsdb/interface";
 
 function parseOptions() {
@@ -53,6 +55,29 @@ function printCommitHistory(newToOldCommits: ICommit[]) {
     console.log(`Date: ${new Date(commit.author.timestamp).toLocaleString()}`);
     console.log(`\n    ${commit.message}\n`);
   });
+}
+
+function printSnapshot(snapshot: ITreeSnapshot) {
+  console.log(`commitHash: \x1b[33m${snapshot.commitHash}\x1b[0m`); // Yellow color for commitHash
+
+  const textDecoder = new TextDecoder();
+
+  for (const [fileName, entry] of Object.entries(snapshot.treeData)) {
+    console.log(
+      `- \x1b[32m${fileName}\x1b[0m - \x1b[37m${entry.blob_hash}\x1b[0m`
+    ); // Green color for fileName, Gray for blobHash
+    console.log(
+      `   - \x1b[36mmetadata\x1b[0m: ${JSON.stringify(entry.metadata)}`
+    );
+
+    // Limit file content to 100 characters
+    const rawContent = textDecoder.decode(entry.blob);
+    const content =
+      rawContent.length > 100
+        ? rawContent.substring(0, 100) + "..."
+        : rawContent;
+    console.log(`   - \x1b[36mtextBlob\x1b[0m: ${content}`);
+  }
 }
 
 async function main() {
@@ -113,6 +138,24 @@ async function main() {
       case "history": {
         const newToOldCommits = (await listTopCommit(storage, 100)) ?? [];
         printCommitHistory(newToOldCommits);
+        break;
+      }
+      case "snapshot": {
+        let commitHash = args[0];
+        if (!commitHash) {
+          commitHash = (await fetchCommitHashAtHead(storage)) ?? "";
+        }
+        if (!commitHash) {
+          console.error(`Could not resolve commitHash: ${commitHash}`);
+          break;
+        }
+        const snapshot = await SnapshotHelper.createTreeSnapshot(
+          commitHash,
+          storage
+        );
+
+        // console.dir(snapshot, { depth: 10 });
+        printSnapshot(snapshot);
         break;
       }
       default:
@@ -179,6 +222,18 @@ async function addFile(
     value: newCommit.hash,
   });
   return newCommit;
+}
+
+async function fetchCommitHashAtHead(
+  storage: IStorageAdapter
+): Promise<string | null> {
+  const head = await storage.getHead();
+  if (!head) return null;
+  if (head.type === "ref")
+    throw new Error("Currently not support Head point to ref");
+
+  const commitHash = head.value;
+  return commitHash;
 }
 
 async function fetchHead(storage: IStorageAdapter): Promise<{
