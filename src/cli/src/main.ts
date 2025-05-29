@@ -42,7 +42,17 @@ function printHelp() {
   console.log(
     "\x1b[37m\tgetBlob <blobHash>: Retrieve and display the content of a blob by its hash.\x1b[0m"
   );
+  console.log("\x1b[37m\thistory: Display the commit history.\x1b[0m");
   console.log("\x1b[37m\thelp: Display this help message.\x1b[0m");
+}
+
+function printCommitHistory(newToOldCommits: ICommit[]) {
+  newToOldCommits.forEach((commit) => {
+    console.log(`commit \x1b[33m${commit.hash}\x1b[0m`);
+    console.log(`Author: ${commit.author.name} <${commit.author.email}>`);
+    console.log(`Date: ${new Date(commit.author.timestamp).toLocaleString()}`);
+    console.log(`\n    ${commit.message}\n`);
+  });
 }
 
 async function main() {
@@ -56,7 +66,12 @@ async function main() {
   );
   printHelp();
 
+  // change stdin color
+  process.stdout.write("\x1b[34m> ");
   for await (const line of console) {
+    // reset color for stdout
+    process.stdout.write("\n\x1b[0m");
+
     const [cmd, ...args] = line.split(" ");
     switch (cmd) {
       case "help": {
@@ -76,9 +91,7 @@ async function main() {
           break;
         }
         const commit = await addFile(storage, fileName, fileContent);
-
-        console.log("done. head commit: ", commit.hash);
-
+        console.log(`done. head commit: \x1b[33m${commit.hash}\x1b[0m`);
         break;
       }
       case "getBlob": {
@@ -88,22 +101,28 @@ async function main() {
           console.error(`Blob with hash ${blobHash} not found`);
           break;
         }
-
         const blobObj = await storage.getBlob(blobHash);
         if (!blobObj) {
           console.error(`Blob with hash ${blobHash} not found`);
           break;
         }
-
         const decoder = new TextDecoder();
         console.log(decoder.decode(blobObj.content));
         break;
       }
+      case "history": {
+        const newToOldCommits = (await listTopCommit(storage, 100)) ?? [];
+        printCommitHistory(newToOldCommits);
+        break;
+      }
       default:
-        console.log("unknown command", cmd);
+        console.warn("unknown command", cmd);
         printHelp();
         break;
     }
+
+    // change stdin color
+    process.stdout.write("\x1b[34m> ");
   }
 }
 
@@ -183,6 +202,54 @@ async function fetchHead(storage: IStorageAdapter): Promise<{
     tree: treeObj,
     commit: commitObj,
   };
+}
+
+async function listTopCommit(storage: IStorageAdapter, depth: number) {
+  const head = await fetchHead(storage);
+  if (!head) return;
+
+  const results: ICommit[] = [];
+  const onVisitFn = (itm: ICommit) => {
+    results.push(itm);
+  };
+
+  await dfsFromCommit(storage, head?.commit.hash, onVisitFn, depth);
+
+  return results;
+}
+
+async function dfsFromCommit(
+  storage: IStorageAdapter,
+  fromCommitHash: string,
+  onVisitFn: (_: ICommit) => void,
+  maxDepths: number = 10
+) {
+  const queue = [];
+  const visited = new Set<string>();
+  let depth: number = 0;
+
+  queue.push(fromCommitHash);
+
+  while (queue.length > 0) {
+    depth++;
+    if (depth >= maxDepths) break;
+
+    const topCommitHash = queue.shift();
+    if (!topCommitHash) break;
+
+    if (visited.has(topCommitHash)) continue;
+
+    visited.add(topCommitHash);
+
+    const commitObj = await storage.getCommit(topCommitHash);
+    if (!commitObj) break;
+
+    onVisitFn(commitObj);
+
+    for (const hash of commitObj.parent_hashes) {
+      queue.push(hash);
+    }
+  }
 }
 
 main();
