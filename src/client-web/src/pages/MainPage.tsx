@@ -1,5 +1,5 @@
 import React from "react";
-import { useSnapshotContext } from "../context/SnapshotContext";
+import { useAppContext } from "../context/AppContext";
 import { SnapshotTree } from "../components/SnapshotTree";
 import { HistoryModal } from "../components/HistoryModal";
 import { Button } from "../components/ui/button";
@@ -40,31 +40,23 @@ const mockCommits = [
 ];
 
 export const MainPage: React.FC = () => {
-  const {
-    tree,
-    setTree,
-    commits,
-    setCommits,
-    isHistoryModalOpen,
-    setHistoryModalOpen,
-    previewFilePath,
-    setPreviewFilePath,
-    previewContent,
-    setPreviewContent,
-  } = useSnapshotContext();
+  const { state, dispatch } = useAppContext();
 
   React.useEffect(() => {
-    if (!tree) setTree(mockTree);
-    if (!commits.length) setCommits(mockCommits);
-  }, [tree, setTree, commits, setCommits]);
+    if (!state.mainPage.treeSnapshot) {
+      dispatch({ type: "SET_TREE_SNAPSHOT", payload: mockTree });
+    }
+    if (!state.modalHistory.commitHistory.length) {
+      dispatch({ type: "SET_COMMIT_HISTORY", payload: mockCommits });
+    }
+  }, [state.mainPage.treeSnapshot, state.modalHistory.commitHistory, dispatch]);
 
   const handlePreview = (filePath: string) => {
     // For now, just mock content. In real app, fetch file content here.
-    setPreviewFilePath(filePath);
-    setPreviewContent(
-      `This is a preview of ${filePath}.\nFile content goes here...`
-    );
+    dispatch({ type: "SET_ROUTE", payload: "modalView" });
+    dispatch({ type: "SET_COMMIT", payload: mockCommits[0] });
   };
+
   const handleDownload = (filePath: string) => {
     alert(`Download: ${filePath}`);
   };
@@ -78,32 +70,31 @@ export const MainPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setHistoryModalOpen(true)}
+            onClick={() =>
+              dispatch({ type: "SET_ROUTE", payload: "modalHistory" })
+            }
           >
             History
           </Button>
         </div>
-        {tree && (
+        {state.mainPage.treeSnapshot && (
           <SnapshotTree
-            tree={tree}
+            tree={state.mainPage.treeSnapshot}
             onPreview={handlePreview}
             onDownload={handleDownload}
           />
         )}
       </div>
       <HistoryModal
-        open={isHistoryModalOpen}
-        onClose={() => setHistoryModalOpen(false)}
-        commits={commits}
+        open={state.route === "modalHistory"}
+        onClose={() => dispatch({ type: "SET_ROUTE", payload: "main" })}
+        commits={state.modalHistory.commitHistory}
       />
       <PreviewModal
-        open={!!previewFilePath}
-        filePath={previewFilePath}
-        content={previewContent}
-        onClose={() => {
-          setPreviewFilePath(null);
-          setPreviewContent(null);
-        }}
+        open={state.route === "modalView"}
+        filePath={state.modalView.commit?.hash || null}
+        content={state.modalView.commit?.message || null}
+        onClose={() => dispatch({ type: "SET_ROUTE", payload: "main" })}
       />
     </div>
   );

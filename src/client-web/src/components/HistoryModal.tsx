@@ -2,6 +2,7 @@ import React from "react";
 import { GitHistoryList } from "./GitHistoryList";
 import type { ICommit } from "../types";
 import { Button } from "./ui/button";
+import { useAppContext } from "../context/AppContext";
 
 interface HistoryModalProps {
   open: boolean;
@@ -14,6 +15,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
   onClose,
   commits,
 }) => {
+  const { dispatch } = useAppContext();
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -22,7 +25,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
           <GitHistoryList commits={commits} />
         </div>
         <Button className="self-end mt-2" onClick={onClose}>
-          Button ok
+          Close
         </Button>
       </div>
     </div>

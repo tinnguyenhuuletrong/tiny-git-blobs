@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "./ui/button";
+import { useAppContext } from "../context/AppContext";
 
 interface PreviewModalProps {
   open: boolean;
@@ -14,6 +15,8 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   content,
   onClose,
 }) => {
+  const { dispatch } = useAppContext();
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

@@ -1,11 +1,11 @@
 import React from "react";
-import { SnapshotProvider } from "./context/SnapshotContext";
+import { AppProvider } from "./context/AppContext";
 import { MainPage } from "./pages/MainPage";
 
 const App: React.FC = () => (
-  <SnapshotProvider>
+  <AppProvider>
     <MainPage />
-  </SnapshotProvider>
+  </AppProvider>
 );
 
 export default App;
