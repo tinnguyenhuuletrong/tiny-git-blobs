@@ -1,19 +1,11 @@
-import { useState } from "react";
-import { Button } from "./components/ui/button";
+import React from "react";
+import { SnapshotProvider } from "./context/SnapshotContext";
+import { MainPage } from "./pages/MainPage";
 
-function App() {
-  const [count, setCount] = useState(0);
-
-  return (
-    <>
-      <div className="flex flex-col items-center justify-center min-h-svh gap-2">
-        <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
-          Count: {count}
-        </h4>
-        <Button onClick={(_) => setCount(count + 1)}>Click me</Button>
-      </div>
-    </>
-  );
-}
+const App: React.FC = () => (
+  <SnapshotProvider>
+    <MainPage />
+  </SnapshotProvider>
+);
 
 export default App;

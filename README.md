@@ -15,9 +15,9 @@ A NoSQL database system with Git-like versioning features.
 
 ```
 /src/
-├── cores/                 # Platform-agnostic core logic (TS)
-├── interface/            # Shared TypeScript interfaces & types
-├── adapter/              # Interface implementations
+├── cores/               # Platform-agnostic core logic (TS)
+├── interface/           # Shared TypeScript interfaces & types
+├── adapter/             # Interface implementations
 ├── server/              # Bun server application
 └── client-web/          # React client application
 └── cli/                 # Cli application
