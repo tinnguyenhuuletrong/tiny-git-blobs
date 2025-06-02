@@ -13,9 +13,9 @@ import {
 } from "@/lib/appLogic";
 import { saveArrayBuffer } from "@/lib/utils";
 import type { Action, IAppState } from "@/types";
-import type { ITree } from "@gitblobsdb/interface";
 import { FaPlus } from "react-icons/fa";
 import { Tooltip } from "@/components/ui/tooltip";
+import { addFile, fetchHead } from "@/lib/coreOpts";
 
 export const MainPage: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -48,9 +48,7 @@ export const MainPage: React.FC = () => {
     // Refresh tree snapshot
     const storage = state.core.storage;
     if (storage) {
-      const head = await import("@/lib/coreOpts").then((m) =>
-        m.fetchHead(storage)
-      );
+      const head = await fetchHead(storage);
       if (head) {
         dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
       }
@@ -222,12 +220,8 @@ function useAddEditModalHandler(
     if (mode === "add") {
       const storage = state.core.storage;
       if (storage) {
-        await import("@/lib/coreOpts").then((m) =>
-          m.addFile(storage, fileName, fileContent)
-        );
-        const head = await import("@/lib/coreOpts").then((m) =>
-          m.fetchHead(storage)
-        );
+        await addFile(storage, fileName, fileContent);
+        const head = await fetchHead(storage);
         if (head) {
           dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
         }
@@ -236,9 +230,7 @@ function useAddEditModalHandler(
       await updateFileData(state, fileName, fileContent);
       const storage = state.core.storage;
       if (storage) {
-        const head = await import("@/lib/coreOpts").then((m) =>
-          m.fetchHead(storage)
-        );
+        const head = await fetchHead(storage);
         if (head) {
           dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
         }
