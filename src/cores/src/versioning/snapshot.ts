@@ -1,4 +1,4 @@
-import { IStorageAdapter, ITreeSnapshot } from "@gitblobsdb/interface";
+import type { IStorageAdapter, ITreeSnapshot } from "@gitblobsdb/interface";
 
 /**
  * Creates a tree snapshot for a given commit hash

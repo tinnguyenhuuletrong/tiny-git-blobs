@@ -13,7 +13,7 @@ export async function appStartingUp(
   if (!head) {
     console.log("init new repo");
     // mock some commit
-    await CoreOps.addFile(storage, "file_01.txt", "this is content of file 01");
+    await CoreOps.addFile(storage, "dummy.txt", "this is a dummy file");
   }
 
   dispatch({

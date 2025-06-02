@@ -38,7 +38,7 @@ export const SnapshotTree: React.FC<SnapshotTreeProps> = ({
                   </span>
                   <span>{filePath}</span>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-col flex-wrap gap-1 text-xs text-muted-foreground">
                   <span className="truncate max-w-[180px]">
                     Blob: {treeEntry.blob_hash}
                   </span>

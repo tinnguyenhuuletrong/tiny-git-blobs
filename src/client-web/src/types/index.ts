@@ -7,7 +7,12 @@ import type {
 export type { ITree, ICommit, ITreeEntry, IStorageAdapter };
 
 // Types
-export type Route = "startup" | "main" | "modalHistory" | "modalView";
+export type Route =
+  | "startup"
+  | "main"
+  | "modalHistory"
+  | "modalView"
+  | "modalAddEdit";
 
 export interface IAppState {
   core: {
@@ -24,6 +29,11 @@ export interface IAppState {
     treeEntry: ITreeEntry | null;
     filePath: string | null;
   };
+  modalAddEdit: {
+    mode: "add" | "edit";
+    fileName: string;
+    fileContent: string;
+  };
 }
 
 // Action Types
@@ -38,6 +48,14 @@ export type Action =
       payload: {
         treeEntry: ITreeEntry | null;
         filePath: string | null;
+      };
+    }
+  | {
+      type: "SET_ADD_EDIT_MODAL";
+      payload: {
+        mode: "add" | "edit";
+        fileName: string;
+        fileContent: string;
       };
     }
   | { type: "RESET_STATE" };

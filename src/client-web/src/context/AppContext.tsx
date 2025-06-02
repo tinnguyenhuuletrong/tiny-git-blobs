@@ -24,6 +24,11 @@ const initialState: IAppState = {
     treeEntry: null,
     filePath: null,
   },
+  modalAddEdit: {
+    mode: "add",
+    fileName: "",
+    fileContent: "",
+  },
 };
 
 // Reducer
@@ -55,6 +60,14 @@ const reducer = (state: IAppState, action: Action): IAppState => {
         ...state,
         modalView: {
           ...state.modalView,
+          ...action.payload,
+        },
+      };
+    case "SET_ADD_EDIT_MODAL":
+      return {
+        ...state,
+        modalAddEdit: {
+          ...state.modalAddEdit,
           ...action.payload,
         },
       };
