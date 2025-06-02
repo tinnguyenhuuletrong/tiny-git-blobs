@@ -22,11 +22,11 @@ export const SnapshotTree: React.FC<SnapshotTreeProps> = ({
           return (
             <li
               key={filePath}
-              className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 last:border-b-0"
+              className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 last:border-b-0 gap-1"
             >
-              <div className="flex-1">
+              <div className="flex-1 w-1/2">
                 <div className="font-mono text-sm break-all">{filePath}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground truncate">
                   Blob: {treeEntry.blob_hash}
                 </div>
                 <div className="text-xs text-muted-foreground">

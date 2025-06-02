@@ -1,21 +1,35 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { useAppContext } from "../context/AppContext";
+import { downloadBlobData } from "@/lib/appLogic";
 
 interface PreviewModalProps {
   open: boolean;
   filePath: string | null;
-  content: string | null;
+  blobHash: string | null;
   onClose: () => void;
 }
 
 export const PreviewModal: React.FC<PreviewModalProps> = ({
   open,
   filePath,
-  content,
+  blobHash,
   onClose,
 }) => {
-  const { dispatch } = useAppContext();
+  const { state } = useAppContext();
+  const [content, setContent] = useState<string>("");
+
+  useEffect(() => {
+    const intJob = async () => {
+      const data = await downloadBlobData(state, blobHash || "");
+      if (data) {
+        const decoder = new TextDecoder();
+        setContent(decoder.decode(data));
+      }
+    };
+
+    intJob();
+  }, [blobHash, setContent]);
 
   if (!open) return null;
   return (

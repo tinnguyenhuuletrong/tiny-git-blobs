@@ -12,7 +12,7 @@ export const GitHistoryList: React.FC<GitHistoryListProps> = ({ commits }) => (
         key={commit.hash}
         className="p-3 rounded-lg bg-muted shadow-sm flex flex-col gap-1"
       >
-        <div className="text-xs text-muted-foreground font-mono break-all">
+        <div className="text-xs text-muted-foreground font-mono break-all truncate">
           {commit.hash}
         </div>
         <div className="text-sm font-semibold">{commit.message}</div>

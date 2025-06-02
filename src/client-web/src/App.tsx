@@ -1,10 +1,10 @@
 import React from "react";
 import { AppProvider } from "./context/AppContext";
-import { MainPage } from "./pages/MainPage";
+import { Route } from "./pages/Route";
 
 const App: React.FC = () => (
   <AppProvider>
-    <MainPage />
+    <Route />
   </AppProvider>
 );
 

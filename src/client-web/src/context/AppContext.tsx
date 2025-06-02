@@ -6,35 +6,14 @@ import React, {
   useReducer,
 } from "react";
 import type { ReactNode } from "react";
-import type { ITree, ICommit } from "../types";
-
-// Types
-type Route = "main" | "modalHistory" | "modalView";
-
-interface IAppState {
-  route: Route;
-  mainPage: {
-    treeSnapshot: ITree | null;
-  };
-  modalHistory: {
-    commitHistory: ICommit[];
-  };
-  modalView: {
-    commit: ICommit | null;
-  };
-}
-
-// Action Types
-type Action =
-  | { type: "SET_ROUTE"; payload: Route }
-  | { type: "SET_TREE_SNAPSHOT"; payload: ITree }
-  | { type: "SET_COMMIT_HISTORY"; payload: ICommit[] }
-  | { type: "SET_COMMIT"; payload: ICommit }
-  | { type: "RESET_STATE" };
+import type { ITree, ICommit, Action, IAppState } from "../types";
 
 // Initial State
 const initialState: IAppState = {
-  route: "main",
+  core: {
+    storage: undefined,
+  },
+  route: "startup",
   mainPage: {
     treeSnapshot: null,
   },
@@ -42,7 +21,8 @@ const initialState: IAppState = {
     commitHistory: [],
   },
   modalView: {
-    commit: null,
+    treeEntry: null,
+    filePath: null,
   },
 };
 
@@ -70,16 +50,32 @@ const reducer = (state: IAppState, action: Action): IAppState => {
           commitHistory: action.payload,
         },
       };
-    case "SET_COMMIT":
+    case "SET_PREVIEW_TREE_ENTRY":
       return {
         ...state,
         modalView: {
           ...state.modalView,
-          commit: action.payload,
+          ...action.payload,
         },
       };
     case "RESET_STATE":
       return initialState;
+
+    case "APP_STARTUP_BEGIN": {
+      return {
+        ...state,
+        route: "startup",
+      };
+    }
+    case "APP_STARTUP_END": {
+      return {
+        ...state,
+        route: "main",
+        core: {
+          storage: action.payload.storage,
+        },
+      };
+    }
     default:
       return state;
   }
@@ -135,3 +131,5 @@ function useDispatcherDebugLog(
     return dispatch(action);
   };
 }
+
+// -------------------------- //
