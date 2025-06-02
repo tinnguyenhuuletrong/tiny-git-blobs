@@ -44,3 +44,23 @@ export async function listTop10Commits(state: IAppState) {
   if (!res) return [];
   return res;
 }
+
+export async function updateFileData(
+  state: IAppState,
+  fileName: string,
+  fileData: string
+) {
+  const storage = state.core.storage;
+  if (!storage) throw new Error("No storage");
+  await CoreOps.updateFile(storage, fileName, fileData);
+  const head = await CoreOps.fetchHead(storage);
+  return head?.tree;
+}
+
+export async function deleteFileData(state: IAppState, fileName: string) {
+  const storage = state.core.storage;
+  if (!storage) throw new Error("No storage");
+  await CoreOps.deleteFile(storage, fileName);
+  const head = await CoreOps.fetchHead(storage);
+  return head?.tree;
+}

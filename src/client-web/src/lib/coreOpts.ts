@@ -143,3 +143,93 @@ async function dfsFromCommit(
     }
   }
 }
+
+export async function updateFile(
+  storage: IStorageAdapter,
+  fileName: string,
+  fileData: string
+) {
+  const encoder = new TextEncoder();
+  const head = await fetchHead(storage);
+  if (!head) throw new Error("No HEAD found");
+
+  const newFileBlob = createBlob(encoder.encode(fileData));
+  const parent_hashes = head?.commit.hash ? [head?.commit.hash] : [];
+
+  const currentEntries = { ...(head?.tree?.entries ?? {}) };
+  if (!currentEntries[fileName]) throw new Error("File does not exist");
+  currentEntries[fileName] = {
+    blob_hash: newFileBlob.hash,
+    metadata_hash: "",
+    type: "file",
+  };
+  const newTreeObj = createTree(currentEntries);
+
+  const timestamp = new Date().toISOString();
+  const newCommit = createCommit({
+    tree_hash: newTreeObj.hash,
+    parent_hashes,
+    author: {
+      name: "",
+      email: "",
+      timestamp,
+    },
+    committer: {
+      name: "",
+      email: "",
+      timestamp,
+    },
+    message: `update file: ${fileName}`,
+  });
+
+  await Promise.all([
+    await storage.putBlob(newFileBlob),
+    await storage.putTree(newTreeObj),
+    await storage.putCommit(newCommit),
+  ]);
+
+  await storage.setHead({
+    type: "commit",
+    value: newCommit.hash,
+  });
+  return newCommit;
+}
+
+export async function deleteFile(storage: IStorageAdapter, fileName: string) {
+  const head = await fetchHead(storage);
+  if (!head) throw new Error("No HEAD found");
+  const parent_hashes = head?.commit.hash ? [head?.commit.hash] : [];
+
+  const currentEntries = { ...(head?.tree?.entries ?? {}) };
+  if (!currentEntries[fileName]) throw new Error("File does not exist");
+  delete currentEntries[fileName];
+  const newTreeObj = createTree(currentEntries);
+
+  const timestamp = new Date().toISOString();
+  const newCommit = createCommit({
+    tree_hash: newTreeObj.hash,
+    parent_hashes,
+    author: {
+      name: "",
+      email: "",
+      timestamp,
+    },
+    committer: {
+      name: "",
+      email: "",
+      timestamp,
+    },
+    message: `delete file: ${fileName}`,
+  });
+
+  await Promise.all([
+    await storage.putTree(newTreeObj),
+    await storage.putCommit(newCommit),
+  ]);
+
+  await storage.setHead({
+    type: "commit",
+    value: newCommit.hash,
+  });
+  return newCommit;
+}
