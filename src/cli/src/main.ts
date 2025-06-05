@@ -9,7 +9,10 @@ import {
 } from "@gitblobsdb/cores";
 import { cwd } from "process";
 import {
+  IBlob,
   ICommit,
+  IMetadata,
+  IPackObject,
   IStorageAdapter,
   IStorageAdapterEx,
   ITree,
@@ -83,6 +86,12 @@ function printHelp() {
     color(
       "gray",
       "\tdiff [--save] <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)"
+    )
+  );
+  console.log(
+    color(
+      "gray",
+      "\texport [path]: Export the entire storage to a binary file. (default path is ./backup.bin)"
     )
   );
 }
@@ -260,13 +269,22 @@ async function main() {
 
         break;
       }
-      case "test": {
-        const storageExt = storage.asStorageExt();
-        if (!storageExt) break;
-
-        for await (const itm of storageExt.scanObject()) {
-          console.log(itm);
+      case "export": {
+        const savedTopath = args[0] || "./backup.bin";
+        const dataPack = await generateBackupPacket(storage);
+        if (!dataPack) {
+          console.error(color("gray", `Storage Adapter don't support this`));
+          break;
         }
+        await writeFile(savedTopath, dataPack.data);
+
+        console.log(
+          color(
+            "blue",
+            `saved to ${savedTopath} - ${dataPack.data.length} bytes`
+          )
+        );
+
         break;
       }
       default:
@@ -441,6 +459,55 @@ async function generateDiffPacket(result: DiffResult) {
       timestamp: new Date().toISOString(),
     },
   });
+}
+
+async function generateBackupPacket(storage: IStorageAdapter) {
+  const storageExt = storage.asStorageExt?.();
+  if (!storageExt) return null;
+
+  const others: Record<string, string> = {};
+  const packObject: IPackObject = {
+    commits: [],
+    trees: [],
+    blobs: [],
+    metadata: [],
+
+    _header: {
+      version: "1",
+      timestamp: new Date().toString(),
+      others,
+    },
+  };
+
+  const currentHead = await fetchHead(storage);
+
+  for await (const itm of storageExt.scanObject()) {
+    switch (itm.type) {
+      case "commit": {
+        packObject.commits.push(itm as unknown as ICommit);
+        break;
+      }
+      case "blob": {
+        packObject.blobs.push(itm as unknown as IBlob);
+        break;
+      }
+      case "metadata": {
+        packObject.metadata.push(itm as unknown as IMetadata);
+        break;
+      }
+      case "tree": {
+        packObject.trees.push(itm as unknown as ITree);
+        break;
+      }
+    }
+  }
+
+  others["commit_head"] = currentHead?.commit.hash || "";
+  others["tree_head"] = currentHead?.tree.hash || "";
+
+  const packer = new BsonPackAdapter();
+  const res = packer.packObjects(packObject);
+  return res;
 }
 
 main();
