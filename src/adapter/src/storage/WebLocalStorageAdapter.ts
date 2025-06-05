@@ -1,12 +1,12 @@
-import {
-  type IBlob,
-  type ICommit,
-  type IHead,
-  type IMetadata,
-  type IObject,
-  type IRef,
-  type ITree,
-  type IStorageAdapter,
+import type {
+  IBlob,
+  ICommit,
+  IHead,
+  IMetadata,
+  IObject,
+  IRef,
+  ITree,
+  IStorageAdapter,
   IStorageAdapterEx,
 } from "@gitblobsdb/interface";
 
