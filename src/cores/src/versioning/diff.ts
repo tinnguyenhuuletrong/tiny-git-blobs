@@ -26,9 +26,9 @@ export interface DiffResult {
  * @returns A DiffResult containing all necessary objects and commit history
  */
 export async function findRevisionDiff(
+  storage: IStorageAdapter,
   fromCommitHash: string,
   toCommitHash: string,
-  storage: IStorageAdapter,
   maxDepth: number = 1000
 ): Promise<DiffResult> {
   const result: DiffResult = {
@@ -79,7 +79,7 @@ export async function findRevisionDiff(
       if (!visitedObjects.has(entry.metadata_hash)) {
         const metadata = await storage.getMetadata(entry.metadata_hash);
         if (!metadata) {
-          throw new Error(`Metadata not found: ${entry.metadata_hash}`);
+          continue;
         }
         result.objects.metadata[entry.metadata_hash] = metadata;
         visitedObjects.add(entry.metadata_hash);

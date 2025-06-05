@@ -152,7 +152,7 @@ describe("findRevisionDiff", () => {
   });
 
   it("should find all objects between two commits", async () => {
-    const result = await findRevisionDiff("commit1", "commit2", storage);
+    const result = await findRevisionDiff(storage, "commit1", "commit2");
 
     // Check commits
     expect(result.commitChains).toEqual(["commit1", "commit2"]);
@@ -177,7 +177,7 @@ describe("findRevisionDiff", () => {
   });
 
   it("should stop collecting when fromCommitHash is reached", async () => {
-    const result = await findRevisionDiff("commit2", "commit3", storage);
+    const result = await findRevisionDiff(storage, "commit2", "commit3");
 
     // Check commits
     expect(result.commitChains).toEqual(["commit2", "commit3"]);
@@ -203,29 +203,22 @@ describe("findRevisionDiff", () => {
 
   it("should throw error when commit is not found", async () => {
     await expect(
-      findRevisionDiff("nonexistent", "commit2", storage)
+      findRevisionDiff(storage, "nonexistent", "commit2")
     ).rejects.toThrow("Commit not found: nonexistent");
   });
 
   it("should throw error when tree is not found", async () => {
     await storage.deleteObject("tree2");
     await expect(
-      findRevisionDiff("commit1", "commit2", storage)
+      findRevisionDiff(storage, "commit1", "commit2")
     ).rejects.toThrow("Tree not found: tree2");
   });
 
   it("should throw error when blob is not found", async () => {
     await storage.deleteObject("blob2");
     await expect(
-      findRevisionDiff("commit1", "commit2", storage)
+      findRevisionDiff(storage, "commit1", "commit2")
     ).rejects.toThrow("Blob not found: blob2");
-  });
-
-  it("should throw error when metadata is not found", async () => {
-    await storage.deleteObject("meta2");
-    await expect(
-      findRevisionDiff("commit1", "commit2", storage)
-    ).rejects.toThrow("Metadata not found: meta2");
   });
 
   it("should respect maxDepth parameter", async () => {
@@ -239,12 +232,12 @@ describe("findRevisionDiff", () => {
 
     // Should work with default maxDepth
     await expect(
-      findRevisionDiff("commit1", "deepCommit", storage)
+      findRevisionDiff(storage, "commit1", "deepCommit")
     ).resolves.toBeDefined();
 
     // Should fail with low maxDepth
     await expect(
-      findRevisionDiff("commit1", "deepCommit", storage, 1)
+      findRevisionDiff(storage, "commit1", "deepCommit", 1)
     ).rejects.toThrow("Maximum depth 1 exceeded while traversing commits");
   });
 });

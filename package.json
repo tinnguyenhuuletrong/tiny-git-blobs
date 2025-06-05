@@ -14,7 +14,8 @@
     "build": "bun run --cwd src/cores build && bun run --cwd src/interface build && bun run --cwd src/adapter build",
     "web:dev": "bun run --cwd src/client-web dev",
     "web:build": "bun run --cwd src/client-web build",
-    "cli": "bun run src/cli/src/main"
+    "cli:01": "bun run src/cli/src/main --storagePath ./_tmp/.storage01",
+    "cli:02": "bun run src/cli/src/main  --storagePath ./_tmp/.storage02"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

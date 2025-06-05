@@ -5,7 +5,6 @@ import {
   createTree,
   createBlob,
   createCommit,
-  createMetadata,
   SnapshotHelper,
 } from "@gitblobsdb/cores";
 import { cwd } from "process";
@@ -16,6 +15,7 @@ import {
   ITreeEntry,
   ITreeSnapshot,
 } from "@gitblobsdb/interface";
+import { findRevisionDiff } from "@gitblobsdb/cores/src/versioning/diff";
 
 // Define color function
 const ASCII_COLORS = {
@@ -71,6 +71,12 @@ function printHelp() {
     color(
       "gray",
       "\tsnapshot [commitHash]: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided)."
+    )
+  );
+  console.log(
+    color(
+      "gray",
+      "\tdiff <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)"
     )
   );
 }
@@ -194,6 +200,43 @@ async function main() {
 
         break;
       }
+      case "diff": {
+        let fromCommitHash: string = args[0];
+        let toCommitHash: string = args[1] || "head";
+
+        if (toCommitHash === "head") {
+          const info = await fetchHead(storage);
+          if (!info) {
+            console.error(color("gray", `Could not resolve head`));
+            break;
+          }
+          toCommitHash = info.commit.hash;
+        }
+
+        if (!(await storage.getCommit(fromCommitHash))) {
+          console.error(
+            color(
+              "gray",
+              `Could not resolve commitHash: ${color("yellow", fromCommitHash)}`
+            )
+          );
+          break;
+        }
+
+        if (!(await storage.getCommit(toCommitHash))) {
+          console.error(
+            color(
+              "gray",
+              `Could not resolve commitHash: ${color("yellow", toCommitHash)}`
+            )
+          );
+          break;
+        }
+
+        const diffObj = await diff(storage, fromCommitHash, toCommitHash);
+        console.dir(diffObj, { depth: 5 });
+        break;
+      }
       default:
         console.warn(color("gray", "unknown command"), color("yellow", cmd));
         printHelp();
@@ -203,6 +246,14 @@ async function main() {
     // change stdin color
     process.stdout.write(color("blue", "> "));
   }
+}
+async function diff(
+  storage: IStorageAdapter,
+  fromCommit: string,
+  toCommit: string
+) {
+  const diffObj = await findRevisionDiff(storage, fromCommit, toCommit);
+  return diffObj;
 }
 
 async function addFile(

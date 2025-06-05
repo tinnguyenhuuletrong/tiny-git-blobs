@@ -10,9 +10,9 @@ export type { ITree, ICommit, ITreeEntry, IStorageAdapter };
 export type Route =
   | "startup"
   | "main"
-  | "modalHistory"
-  | "modalView"
-  | "modalAddEdit";
+  | "main/modalHistory"
+  | "main/modalPreview"
+  | "main/modalAddEdit";
 
 export interface IAppState {
   core: {

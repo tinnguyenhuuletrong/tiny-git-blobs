@@ -88,18 +88,18 @@ export const MainPage: React.FC = () => {
         )}
       </div>
       <HistoryModal
-        open={state.route === "modalHistory"}
+        open={state.route === "main/modalHistory"}
         onClose={handleHistoryClose}
         commits={state.modalHistory.commitHistory}
       />
       <PreviewModal
-        open={state.route === "modalView"}
+        open={state.route === "main/modalPreview"}
         filePath={state.modalView.filePath || null}
         blobHash={state.modalView.treeEntry?.blob_hash || null}
         onClose={handlePreviewClose}
       />
       <AddEditModal
-        open={state.route === "modalAddEdit"}
+        open={state.route === "main/modalAddEdit"}
         mode={state.modalAddEdit.mode}
         fileName={state.modalAddEdit.fileName}
         fileContent={state.modalAddEdit.fileContent}
@@ -127,7 +127,7 @@ function useHistoryModalHandler(
   const handleHistoryOpen = async () => {
     const topCommits = await listTop10Commits(state);
     dispatch({ type: "SET_COMMIT_HISTORY", payload: topCommits });
-    dispatch({ type: "SET_ROUTE", payload: "modalHistory" });
+    dispatch({ type: "SET_ROUTE", payload: "main/modalHistory" });
   };
 
   const handleHistoryClose = async () => {
@@ -147,7 +147,7 @@ function usePreviewModalHandler(
   const handlePreviewOpen = (filePath: string) => {
     const treeEntry = treeSnapshot.entries[filePath];
     if (treeEntry) {
-      dispatch({ type: "SET_ROUTE", payload: "modalView" });
+      dispatch({ type: "SET_ROUTE", payload: "main/modalPreview" });
       dispatch({
         type: "SET_PREVIEW_TREE_ENTRY",
         payload: {
@@ -193,7 +193,7 @@ function useAddEditModalHandler(
         fileContent: "",
       },
     });
-    dispatch({ type: "SET_ROUTE", payload: "modalAddEdit" });
+    dispatch({ type: "SET_ROUTE", payload: "main/modalAddEdit" });
   };
 
   const handleEditFile = async (editFileName: string, blobHash: string) => {
@@ -208,7 +208,7 @@ function useAddEditModalHandler(
           fileContent: decoder.decode(data),
         },
       });
-      dispatch({ type: "SET_ROUTE", payload: "modalAddEdit" });
+      dispatch({ type: "SET_ROUTE", payload: "main/modalAddEdit" });
     }
   };
 
