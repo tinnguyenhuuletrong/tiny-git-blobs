@@ -15,6 +15,7 @@ export interface IPackObject {
 
 export interface IPackResult {
   data: Uint8Array;
+  _header: IPackObject["_header"];
 }
 
 export interface IPackAdapter {

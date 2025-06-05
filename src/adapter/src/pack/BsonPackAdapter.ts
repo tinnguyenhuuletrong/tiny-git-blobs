@@ -13,6 +13,7 @@ export class BsonPackAdapter implements IPackAdapter {
     // Return the binary data
     return {
       data: new Uint8Array(bsonData),
+      _header: objects._header,
     };
   }
 

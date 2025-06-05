@@ -15,7 +15,12 @@ import {
   ITreeEntry,
   ITreeSnapshot,
 } from "@gitblobsdb/interface";
-import { findRevisionDiff } from "@gitblobsdb/cores/src/versioning/diff";
+import {
+  DiffResult,
+  findRevisionDiff,
+} from "@gitblobsdb/cores/src/versioning/diff";
+import { BsonPackAdapter } from "@gitblobsdb/adapter/src/pack/BsonPackAdapter";
+import { writeFile } from "fs/promises";
 
 // Define color function
 const ASCII_COLORS = {
@@ -76,7 +81,7 @@ function printHelp() {
   console.log(
     color(
       "gray",
-      "\tdiff <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)"
+      "\tdiff [--save] <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)"
     )
   );
 }
@@ -201,8 +206,10 @@ async function main() {
         break;
       }
       case "diff": {
-        let fromCommitHash: string = args[0];
-        let toCommitHash: string = args[1] || "head";
+        const flags = args.filter((itm) => itm.startsWith("-"));
+        const params = args.filter((itm) => !itm.startsWith("-"));
+        let fromCommitHash: string = params[0];
+        let toCommitHash: string = params[1] || "head";
 
         if (toCommitHash === "head") {
           const info = await fetchHead(storage);
@@ -235,6 +242,21 @@ async function main() {
 
         const diffObj = await diff(storage, fromCommitHash, toCommitHash);
         console.dir(diffObj, { depth: 5 });
+
+        // save bin file
+        if (flags.includes("--save")) {
+          const dataPack = await generateDiffPacket(diffObj);
+          const savedTopath = "./diff.bin";
+          await writeFile(savedTopath, dataPack.data);
+
+          console.log(
+            color(
+              "blue",
+              `saved to ${savedTopath} - ${dataPack.data.length} bytes`
+            )
+          );
+        }
+
         break;
       }
       default:
@@ -247,6 +269,7 @@ async function main() {
     process.stdout.write(color("blue", "> "));
   }
 }
+
 async function diff(
   storage: IStorageAdapter,
   fromCommit: string,
@@ -394,6 +417,20 @@ async function dfsFromCommit(
       queue.push(hash);
     }
   }
+}
+
+async function generateDiffPacket(result: DiffResult) {
+  const packer = new BsonPackAdapter();
+  return packer.packObjects({
+    commits: Object.values(result.objects.commits),
+    blobs: Object.values(result.objects.blobs),
+    trees: Object.values(result.objects.trees),
+    metadata: Object.values(result.objects.metadata),
+    _header: {
+      version: "1",
+      timestamp: new Date().toISOString(),
+    },
+  });
 }
 
 main();
