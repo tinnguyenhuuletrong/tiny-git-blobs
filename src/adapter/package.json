@@ -16,5 +16,8 @@
   "devDependencies": {
     "vitest": "^1.2.2",
     "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "bson": "^6.10.4"
   }
 }
