@@ -134,6 +134,7 @@ You will implement the following data structures. Hashes are typically SHA-256 o
 
 Note
 - all typescript module src should locate inside <moduleName>/src folder
+- this project is using bun, bun workspace 
 
 ## 5. Development Workflow & Feature Implementation Steps 🛠️
 
@@ -228,6 +229,15 @@ Note
         - Blob not found: When a blob referenced by a tree doesn't exist
         - Metadata not found: When metadata referenced by a tree doesn't exist
 
+**PackObject**:
+    Given
+        - A list of objects with type Commit[], Tree[], Blob[], Metadata[]
+        - Headers: 
+            - Record<string, string>
+    Process
+        - Serialize Generate a Binary data
+        - Deserialize Reconstruct from Binary data
+    
 
 * **API Endpoints (Server - `//server/src/api/`)**:
     * **`GET /blob/:hash`**:
