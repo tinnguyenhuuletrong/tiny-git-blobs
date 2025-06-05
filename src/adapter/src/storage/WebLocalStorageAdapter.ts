@@ -7,6 +7,7 @@ import {
   type IRef,
   type ITree,
   type IStorageAdapter,
+  IStorageAdapterEx,
 } from "@gitblobsdb/interface";
 
 export class WebLocalStorageAdapter implements IStorageAdapter {
@@ -169,5 +170,9 @@ export class WebLocalStorageAdapter implements IStorageAdapter {
 
   async deleteObject(hash: string): Promise<void> {
     localStorage.removeItem(this.getObjectKey(hash));
+  }
+
+  asStorageExt(): IStorageAdapterEx | null {
+    return null;
   }
 }

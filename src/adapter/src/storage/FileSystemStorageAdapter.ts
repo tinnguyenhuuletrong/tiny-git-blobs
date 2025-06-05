@@ -1,5 +1,12 @@
 import { join } from "path";
-import { mkdir, readFile, writeFile, access, unlink } from "fs/promises";
+import {
+  mkdir,
+  readFile,
+  writeFile,
+  access,
+  unlink,
+  readdir,
+} from "fs/promises";
 import {
   type IBlob,
   type ICommit,
@@ -9,6 +16,7 @@ import {
   type IRef,
   type ITree,
   type IStorageAdapter,
+  IStorageAdapterEx,
 } from "@gitblobsdb/interface";
 import { R_OK } from "constants";
 
@@ -209,6 +217,20 @@ export class FileSystemStorageAdapter implements IStorageAdapter {
     await this.ensureDirectoryExists(this.metadataPath);
     const savePath = join(this.metadataPath, "head.json");
     await writeFile(savePath, JSON.stringify(head));
+  }
+
+  asStorageExt(): IStorageAdapterEx | null {
+    return this as IStorageAdapterEx;
+  }
+
+  async *scanObject(): AsyncGenerator<IObject> {
+    const objectsPath = this.objectsPath;
+    for (const itm of await readdir(objectsPath, { withFileTypes: true })) {
+      const data = await readFile(join(objectsPath, itm.name));
+      yield JSON.parse(data.toString()) as IObject;
+    }
+
+    return;
   }
 }
 

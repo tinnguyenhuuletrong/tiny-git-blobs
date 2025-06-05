@@ -7,6 +7,7 @@ import {
   type IRef,
   type ITree,
   type IStorageAdapter,
+  IStorageAdapterEx,
 } from "@gitblobsdb/interface";
 
 export class MemoryStorageAdapter implements IStorageAdapter {
@@ -130,5 +131,9 @@ export class MemoryStorageAdapter implements IStorageAdapter {
 
   async deleteObject(hash: string): Promise<void> {
     this.objects.delete(hash);
+  }
+
+  asStorageExt(): IStorageAdapterEx | null {
+    return null;
   }
 }

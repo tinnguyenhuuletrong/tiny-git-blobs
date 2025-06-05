@@ -43,4 +43,12 @@ export interface IStorageAdapter {
   // Utility operations
   hasObject(hash: string): Promise<boolean>;
   deleteObject(hash: string): Promise<void>;
+
+  // Optional extension interface for advanced storage operations
+  asStorageExt?(): IStorageAdapterEx | null;
+}
+
+// Extension interface for advanced storage operations like object scanning
+export interface IStorageAdapterEx {
+  scanObject(): AsyncGenerator<IObject>;
 }

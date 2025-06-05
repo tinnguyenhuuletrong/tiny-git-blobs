@@ -11,6 +11,7 @@ import { cwd } from "process";
 import {
   ICommit,
   IStorageAdapter,
+  IStorageAdapterEx,
   ITree,
   ITreeEntry,
   ITreeSnapshot,
@@ -257,6 +258,15 @@ async function main() {
           );
         }
 
+        break;
+      }
+      case "test": {
+        const storageExt = storage.asStorageExt();
+        if (!storageExt) break;
+
+        for await (const itm of storageExt.scanObject()) {
+          console.log(itm);
+        }
         break;
       }
       default:
