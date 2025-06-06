@@ -2,8 +2,6 @@
  * Core object interfaces for GitBlobsDB
  */
 
-type Satisfies<T extends U, U> = T;
-
 export type ObjectType = "blob" | "tree" | "commit" | "metadata";
 
 // Base interface for all objects
@@ -39,25 +37,21 @@ export interface IBlob extends IObject {
   type: "blob";
   content: IBlobContent;
 }
-type IBlobCheckTest = Satisfies<IBlob, IObject>;
 
 export interface IMetadata extends IObject {
   type: "metadata";
   content: IMetadataContent;
 }
-type IMetadataCheckTest = Satisfies<IMetadata, IObject>;
 
 export interface ITree extends IObject {
   type: "tree";
   content: ITreeContent;
 }
-type ITreeCheckTest = Satisfies<ITree, IObject>;
 
 export interface ICommit extends IObject {
   type: "commit";
   content: ICommitContent;
 }
-type ICommitCheckTest = Satisfies<ICommit, IObject>;
 
 export interface ITreeEntry {
   blob_hash: string;

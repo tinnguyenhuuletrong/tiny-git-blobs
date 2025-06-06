@@ -221,6 +221,18 @@ export class FileSystemStorageAdapter
     return this as IStorageAdapterEx;
   }
 
+  // IStorageAdapterEx
+  //---------------------------------------------------//
+
+  /**
+   * Scans the objects directory and yields each object found.
+   *
+   * This method iterates through the files in the objects directory, attempts to parse each file as an object,
+   * and yields the object if parsing is successful. This allows for efficient iteration over the objects
+   * in the storage without having to load all objects into memory at once.
+   *
+   * @returns An async generator that yields each object found in the objects directory.
+   */
   async *scanObject(): AsyncGenerator<IObject> {
     if (!(await exists(this.objectsPath))) {
       return;
@@ -235,6 +247,15 @@ export class FileSystemStorageAdapter
     }
   }
 
+  /**
+   * Replaces the current storage with a snapshot of the provided data.
+   *
+   * This method cleans up the existing repository, recreates the necessary directories,
+   * extracts and stores the objects from the snapshot data, and finally sets the head to the specified commit.
+   *
+   * @param snapshotData - The snapshot data to replace the current storage with.
+   * @returns A promise that resolves to true if the operation was successful.
+   */
   async replaceWithStorageSnapshot(snapshotData: IPackObject) {
     const head = snapshotData._header.others?.["commit_head"];
     if (!head)
