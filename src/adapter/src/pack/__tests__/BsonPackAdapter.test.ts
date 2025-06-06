@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { BsonPackAdapter } from "../BsonPackAdapter";
-import type { IPackObject } from "@gitblobsdb/interface";
+import type { IMetadata, IPackObject } from "@gitblobsdb/interface";
 
 describe("BsonPackAdapter", () => {
   const adapter = new BsonPackAdapter();
@@ -11,46 +11,58 @@ describe("BsonPackAdapter", () => {
       const testData: IPackObject = {
         commits: [
           {
+            type: "commit",
             hash: "commit1",
-            tree_hash: "tree1",
-            parent_hashes: [],
-            author: {
-              name: "Test Author",
-              email: "test@example.com",
-              timestamp: "2024-03-20T12:00:00Z",
+            content: {
+              tree_hash: "tree1",
+              parent_hashes: [],
+              author: {
+                name: "Test Author",
+                email: "test@example.com",
+                timestamp: "2024-03-20T12:00:00Z",
+              },
+              committer: {
+                name: "Test Committer",
+                email: "test@example.com",
+                timestamp: "2024-03-20T12:00:00Z",
+              },
+              message: "Test commit",
             },
-            committer: {
-              name: "Test Committer",
-              email: "test@example.com",
-              timestamp: "2024-03-20T12:00:00Z",
-            },
-            message: "Test commit",
           },
         ],
         trees: [
           {
+            type: "tree",
             hash: "tree1",
-            entries: {
-              "file1.txt": {
-                blob_hash: "blob1",
-                metadata_hash: "meta1",
-                type: "file",
+            content: {
+              entries: {
+                "file1.txt": {
+                  blob_hash: "blob1",
+                  metadata_hash: "meta1",
+                  type: "file",
+                },
               },
             },
           },
         ],
         blobs: [
           {
+            type: "blob",
             hash: "blob1",
-            content: new Uint8Array([1, 2, 3]),
+            content: {
+              data: new Uint8Array([1, 2, 3]),
+            },
           },
         ],
         metadata: [
           {
+            type: "metadata",
             hash: "meta1",
-            data: {
-              size: 3,
-              type: "text/plain",
+            content: {
+              data: {
+                size: 3,
+                type: "text/plain",
+              },
             },
           },
         ],
@@ -116,8 +128,9 @@ describe("BsonPackAdapter", () => {
         trees: [],
         blobs: [
           {
+            type: "blob",
             hash: "large-blob",
-            content: largeContent,
+            content: { data: largeContent },
           },
         ],
         metadata: [],
@@ -130,23 +143,26 @@ describe("BsonPackAdapter", () => {
       const packed = adapter.packObjects(testData);
       const unpacked = adapter.unpackObjects(packed.data);
 
-      expect(unpacked.blobs[0].content).toEqual(largeContent);
+      expect(unpacked.blobs[0].content.data).toEqual(largeContent);
     });
 
     it("should preserve complex metadata structures", () => {
-      const complexMetadata = {
+      const complexMetadata: IMetadata = {
+        type: "metadata",
         hash: "complex-meta",
-        data: {
-          nested: {
-            array: [1, 2, 3],
-            object: {
-              key: "value",
-              number: 42,
-              boolean: true,
-              null: null,
+        content: {
+          data: {
+            nested: {
+              array: [1, 2, 3],
+              object: {
+                key: "value",
+                number: 42,
+                boolean: true,
+                null: null,
+              },
             },
+            array: ["string", 123, true, null],
           },
-          array: ["string", 123, true, null],
         },
       };
 
@@ -164,7 +180,9 @@ describe("BsonPackAdapter", () => {
       const packed = adapter.packObjects(testData);
       const unpacked = adapter.unpackObjects(packed.data);
 
-      expect(unpacked.metadata[0].data).toEqual(complexMetadata.data);
+      expect(unpacked.metadata[0].content.data).toEqual(
+        complexMetadata.content.data
+      );
       expect(testData._header).toEqual(unpacked._header);
     });
   });

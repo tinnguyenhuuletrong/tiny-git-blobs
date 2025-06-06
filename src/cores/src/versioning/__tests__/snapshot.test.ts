@@ -11,43 +11,55 @@ describe("createTreeSnapshot", () => {
   });
 
   const mockCommit: ICommit = {
+    type: "commit",
     hash: "commit123",
-    tree_hash: "tree123",
-    parent_hashes: [],
-    author: {
-      name: "Test Author",
-      email: "test@example.com",
-      timestamp: "2024-03-20T12:00:00Z",
+    content: {
+      tree_hash: "tree123",
+      parent_hashes: [],
+      author: {
+        name: "Test Author",
+        email: "test@example.com",
+        timestamp: "2024-03-20T12:00:00Z",
+      },
+      committer: {
+        name: "Test Committer",
+        email: "test@example.com",
+        timestamp: "2024-03-20T12:00:00Z",
+      },
+      message: "Test commit",
     },
-    committer: {
-      name: "Test Committer",
-      email: "test@example.com",
-      timestamp: "2024-03-20T12:00:00Z",
-    },
-    message: "Test commit",
   };
 
   const mockTree: ITree = {
+    type: "tree",
     hash: "tree123",
-    entries: {
-      "file1.txt": {
-        blob_hash: "blob123",
-        metadata_hash: "meta123",
-        type: "file",
+    content: {
+      entries: {
+        "file1.txt": {
+          blob_hash: "blob123",
+          metadata_hash: "meta123",
+          type: "file",
+        },
       },
     },
   };
 
   const mockBlob: IBlob = {
+    type: "blob",
     hash: "blob123",
-    content: new Uint8Array([1, 2, 3]),
+    content: {
+      data: new Uint8Array([1, 2, 3]),
+    },
   };
 
   const mockMetadata: IMetadata = {
+    type: "metadata",
     hash: "meta123",
-    data: {
-      size: 3,
-      type: "text/plain",
+    content: {
+      data: {
+        size: 3,
+        type: "text/plain",
+      },
     },
   };
 
@@ -66,8 +78,8 @@ describe("createTreeSnapshot", () => {
       blob_hash: "blob123",
       metadata_hash: "meta123",
       type: "file",
-      metadata: mockMetadata.data,
-      blob: mockBlob.content,
+      metadata: mockMetadata.content.data,
+      blob: mockBlob.content.data,
     });
   });
 

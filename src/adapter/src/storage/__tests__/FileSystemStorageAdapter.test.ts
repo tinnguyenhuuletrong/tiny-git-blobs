@@ -3,6 +3,7 @@ import { FileSystemStorageAdapter } from "../FileSystemStorageAdapter";
 import { join } from "path";
 import { mkdir, rm } from "fs/promises";
 import { createBlob } from "@gitblobsdb/cores/src/objects/create";
+import { ICommit, IMetadata, ITree } from "@gitblobsdb/interface";
 
 describe("FileSystemStorageAdapter", () => {
   const TEST_DIR = join(process.cwd(), "_tmp/test-storage");
@@ -27,7 +28,7 @@ describe("FileSystemStorageAdapter", () => {
 
       expect(retrieved).not.toBeNull();
       expect(retrieved?.hash).toBe(blob.hash);
-      expect(retrieved?.content).toEqual(content);
+      expect(retrieved?.content.data).toEqual(content);
     });
 
     it("should return null for non-existent blob", async () => {
@@ -38,13 +39,16 @@ describe("FileSystemStorageAdapter", () => {
 
   describe("Tree operations", () => {
     it("should store and retrieve a tree", async () => {
-      const tree = {
+      const tree: ITree = {
+        type: "tree",
         hash: "test-tree-hash",
-        entries: {
-          "file1.txt": {
-            blob_hash: "blob1",
-            metadata_hash: "meta1",
-            type: "file" as const,
+        content: {
+          entries: {
+            "file1.txt": {
+              blob_hash: "blob1",
+              metadata_hash: "meta1",
+              type: "file" as const,
+            },
           },
         },
       };
@@ -54,27 +58,30 @@ describe("FileSystemStorageAdapter", () => {
 
       expect(retrieved).not.toBeNull();
       expect(retrieved?.hash).toBe(tree.hash);
-      expect(retrieved?.entries).toEqual(tree.entries);
+      expect(retrieved?.content.entries).toEqual(tree.content.entries);
     });
   });
 
   describe("Commit operations", () => {
     it("should store and retrieve a commit", async () => {
-      const commit = {
+      const commit: ICommit = {
+        type: "commit",
         hash: "test-commit-hash",
-        tree_hash: "test-tree-hash",
-        parent_hashes: ["parent1", "parent2"],
-        author: {
-          name: "Test Author",
-          email: "test@example.com",
-          timestamp: new Date().toISOString(),
+        content: {
+          tree_hash: "test-tree-hash",
+          parent_hashes: ["parent1", "parent2"],
+          author: {
+            name: "Test Author",
+            email: "test@example.com",
+            timestamp: new Date().toISOString(),
+          },
+          committer: {
+            name: "Test Committer",
+            email: "test@example.com",
+            timestamp: new Date().toISOString(),
+          },
+          message: "Test commit message",
         },
-        committer: {
-          name: "Test Committer",
-          email: "test@example.com",
-          timestamp: new Date().toISOString(),
-        },
-        message: "Test commit message",
       };
 
       await adapter.putCommit(commit);
@@ -82,22 +89,27 @@ describe("FileSystemStorageAdapter", () => {
 
       expect(retrieved).not.toBeNull();
       expect(retrieved?.hash).toBe(commit.hash);
-      expect(retrieved?.tree_hash).toBe(commit.tree_hash);
-      expect(retrieved?.parent_hashes).toEqual(commit.parent_hashes);
-      expect(retrieved?.author).toEqual(commit.author);
-      expect(retrieved?.committer).toEqual(commit.committer);
-      expect(retrieved?.message).toBe(commit.message);
+      expect(retrieved?.content.tree_hash).toBe(commit.content.tree_hash);
+      expect(retrieved?.content.parent_hashes).toEqual(
+        commit.content.parent_hashes
+      );
+      expect(retrieved?.content.author).toEqual(commit.content.author);
+      expect(retrieved?.content.committer).toEqual(commit.content.committer);
+      expect(retrieved?.content.message).toBe(commit.content.message);
     });
   });
 
   describe("Metadata operations", () => {
     it("should store and retrieve metadata", async () => {
-      const metadata = {
+      const metadata: IMetadata = {
+        type: "metadata",
         hash: "test-metadata-hash",
-        data: {
-          key1: "value1",
-          key2: 123,
-          key3: { nested: "value" },
+        content: {
+          data: {
+            key1: "value1",
+            key2: 123,
+            key3: { nested: "value" },
+          },
         },
       };
 
@@ -106,7 +118,7 @@ describe("FileSystemStorageAdapter", () => {
 
       expect(retrieved).not.toBeNull();
       expect(retrieved?.hash).toBe(metadata.hash);
-      expect(retrieved?.data).toEqual(metadata.data);
+      expect(retrieved?.content.data).toEqual(metadata.content.data);
     });
   });
 

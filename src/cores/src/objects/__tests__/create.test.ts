@@ -14,7 +14,7 @@ describe("Object Creation Utilities", () => {
 
       expect(blob).toHaveProperty("hash");
       expect(blob).toHaveProperty("content");
-      expect(blob.content).toBe(content);
+      expect(blob.content.data).toBe(content);
       expect(blob.hash).toMatch(/^[a-f0-9]{64}$/); // SHA-256 hash format
     });
   });
@@ -29,8 +29,8 @@ describe("Object Creation Utilities", () => {
       const metadata = createMetadata(data);
 
       expect(metadata).toHaveProperty("hash");
-      expect(metadata).toHaveProperty("data");
-      expect(metadata.data).toBe(data);
+      expect(metadata).toHaveProperty("content");
+      expect(metadata.content.data).toBe(data);
       expect(metadata.hash).toMatch(/^[a-f0-9]{64}$/);
     });
   });
@@ -52,8 +52,8 @@ describe("Object Creation Utilities", () => {
       const tree = createTree(entries);
 
       expect(tree).toHaveProperty("hash");
-      expect(tree).toHaveProperty("entries");
-      expect(tree.entries).toBe(entries);
+      expect(tree).toHaveProperty("content");
+      expect(tree.content.entries).toBe(entries);
       expect(tree.hash).toMatch(/^[a-f0-9]{64}$/);
     });
   });
@@ -78,11 +78,11 @@ describe("Object Creation Utilities", () => {
       const commit = createCommit(params);
 
       expect(commit).toHaveProperty("hash");
-      expect(commit.tree_hash).toBe(params.tree_hash);
-      expect(commit.parent_hashes).toBe(params.parent_hashes);
-      expect(commit.author).toBe(params.author);
-      expect(commit.committer).toBe(params.committer);
-      expect(commit.message).toBe(params.message);
+      expect(commit.content.tree_hash).toBe(params.tree_hash);
+      expect(commit.content.parent_hashes).toBe(params.parent_hashes);
+      expect(commit.content.author).toBe(params.author);
+      expect(commit.content.committer).toBe(params.committer);
+      expect(commit.content.message).toBe(params.message);
       expect(commit.hash).toMatch(/^[a-f0-9]{64}$/);
     });
   });

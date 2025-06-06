@@ -8,7 +8,7 @@ import type {
   IObject,
   IRef,
   ITree,
-} from "@gitblobsdb/interface/src";
+} from "@gitblobsdb/interface";
 
 describe("MemoryStorageAdapter", () => {
   let adapter: MemoryStorageAdapter;
@@ -19,16 +19,18 @@ describe("MemoryStorageAdapter", () => {
 
   describe("Object Operations", () => {
     it("should store and retrieve objects", async () => {
-      const object: IObject = {
+      const blob: IBlob = {
         type: "blob",
-        hash: "test-hash",
-        content: new Uint8Array([1, 2, 3]),
+        hash: "test-blob",
+        content: {
+          data: new Uint8Array([1, 2, 3]),
+        },
       };
 
-      await adapter.putObject(object);
-      const retrieved = await adapter.getObject("test-hash");
+      await adapter.putObject(blob);
+      const retrieved = await adapter.getObject("test-blob");
 
-      expect(retrieved).toEqual(object);
+      expect(retrieved).toEqual(blob);
     });
 
     it("should return null for non-existent objects", async () => {
@@ -40,7 +42,9 @@ describe("MemoryStorageAdapter", () => {
       const object: IObject = {
         type: "blob",
         hash: "test-hash",
-        content: new Uint8Array([1, 2, 3]),
+        content: {
+          data: new Uint8Array([1, 2, 3]),
+        },
       };
 
       expect(await adapter.hasObject("test-hash")).toBe(false);
@@ -52,7 +56,9 @@ describe("MemoryStorageAdapter", () => {
       const object: IObject = {
         type: "blob",
         hash: "test-hash",
-        content: new Uint8Array([1, 2, 3]),
+        content: {
+          data: new Uint8Array([1, 2, 3]),
+        },
       };
 
       await adapter.putObject(object);
@@ -65,8 +71,11 @@ describe("MemoryStorageAdapter", () => {
   describe("Blob Operations", () => {
     it("should store and retrieve blobs", async () => {
       const blob: IBlob = {
+        type: "blob",
         hash: "blob-hash",
-        content: new Uint8Array([1, 2, 3]),
+        content: {
+          data: new Uint8Array([1, 2, 3]),
+        },
       };
 
       await adapter.putBlob(blob);
@@ -84,12 +93,15 @@ describe("MemoryStorageAdapter", () => {
   describe("Tree Operations", () => {
     it("should store and retrieve trees", async () => {
       const tree: ITree = {
+        type: "tree",
         hash: "tree-hash",
-        entries: {
-          "file1.txt": {
-            blob_hash: "blob1",
-            metadata_hash: "meta1",
-            type: "file",
+        content: {
+          entries: {
+            "file1.txt": {
+              blob_hash: "blob1",
+              metadata_hash: "meta1",
+              type: "file",
+            },
           },
         },
       };
@@ -109,20 +121,23 @@ describe("MemoryStorageAdapter", () => {
   describe("Commit Operations", () => {
     it("should store and retrieve commits", async () => {
       const commit: ICommit = {
+        type: "commit",
         hash: "commit-hash",
-        tree_hash: "tree-hash",
-        parent_hashes: ["parent1", "parent2"],
-        author: {
-          name: "Test Author",
-          email: "author@test.com",
-          timestamp: "2024-01-01T00:00:00Z",
+        content: {
+          tree_hash: "tree-hash",
+          parent_hashes: ["parent1", "parent2"],
+          author: {
+            name: "Test Author",
+            email: "author@test.com",
+            timestamp: "2024-01-01T00:00:00Z",
+          },
+          committer: {
+            name: "Test Committer",
+            email: "committer@test.com",
+            timestamp: "2024-01-01T00:00:00Z",
+          },
+          message: "Test commit message",
         },
-        committer: {
-          name: "Test Committer",
-          email: "committer@test.com",
-          timestamp: "2024-01-01T00:00:00Z",
-        },
-        message: "Test commit message",
       };
 
       await adapter.putCommit(commit);
@@ -140,10 +155,13 @@ describe("MemoryStorageAdapter", () => {
   describe("Metadata Operations", () => {
     it("should store and retrieve metadata", async () => {
       const metadata: IMetadata = {
+        type: "metadata",
         hash: "meta-hash",
-        data: {
-          key1: "value1",
-          key2: 123,
+        content: {
+          data: {
+            key1: "value1",
+            key2: 123,
+          },
         },
       };
 

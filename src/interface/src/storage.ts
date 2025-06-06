@@ -7,6 +7,7 @@ import type {
   IRef,
   ITree,
 } from "./objects";
+import type { IPackObject } from "./pack";
 
 /**
  * Storage adapter interface for GitBlobsDB
@@ -45,10 +46,13 @@ export interface IStorageAdapter {
   deleteObject(hash: string): Promise<void>;
 
   // Optional extension interface for advanced storage operations
-  asStorageExt?(): IStorageAdapterEx | null;
+  asStorageExt(): IStorageAdapterEx | null;
 }
 
 // Extension interface for advanced storage operations like object scanning
 export interface IStorageAdapterEx {
   scanObject(): AsyncGenerator<IObject>;
+
+  // Cleanup storage. replace with import data
+  replaceWithStorageSnapshot(storageSnapshot: IPackObject): Promise<boolean>;
 }

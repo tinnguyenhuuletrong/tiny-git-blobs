@@ -145,7 +145,7 @@ function usePreviewModalHandler(
   if (!treeSnapshot) throw new Error("OoO");
 
   const handlePreviewOpen = (filePath: string) => {
-    const treeEntry = treeSnapshot.entries[filePath];
+    const treeEntry = treeSnapshot.content.entries[filePath];
     if (treeEntry) {
       dispatch({ type: "SET_ROUTE", payload: "main/modalPreview" });
       dispatch({
@@ -170,7 +170,7 @@ function usePreviewModalHandler(
   };
 
   const handlePreviewDownload = async (filePath: string) => {
-    const treeEntry = treeSnapshot.entries[filePath];
+    const treeEntry = treeSnapshot.content.entries[filePath];
     const data = await downloadBlobData(state, treeEntry.blob_hash);
     if (data) {
       saveArrayBuffer(data, filePath);

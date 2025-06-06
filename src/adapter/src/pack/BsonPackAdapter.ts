@@ -3,6 +3,7 @@ import type {
   IPackObject,
   IPackResult,
   IPackAdapter,
+  IBlob,
 } from "@gitblobsdb/interface";
 
 export class BsonPackAdapter implements IPackAdapter {
@@ -22,10 +23,15 @@ export class BsonPackAdapter implements IPackAdapter {
     const objects = BSON.deserialize(data) as IPackObject;
 
     // Convert BSON Binary back to Uint8Array for blobs
-    const blobs = objects.blobs.map((blob) => ({
-      ...blob,
-      content: new Uint8Array(blob.content.buffer),
-    }));
+    const blobs = objects.blobs.map((blob: IBlob) => {
+      return {
+        type: "blob" as const,
+        hash: blob.hash,
+        content: {
+          data: new Uint8Array(blob.content.data.buffer),
+        },
+      };
+    });
 
     // Return the unpacked objects
     return {

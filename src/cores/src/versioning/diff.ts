@@ -64,7 +64,7 @@ export async function findRevisionDiff(
     result.objects.trees[treeHash] = tree;
 
     // Process all entries in the tree
-    for (const entry of Object.values(tree.entries) as ITreeEntry[]) {
+    for (const entry of Object.values(tree.content.entries) as ITreeEntry[]) {
       // Collect blob
       if (!visitedObjects.has(entry.blob_hash)) {
         const blob = await storage.getBlob(entry.blob_hash);
@@ -107,7 +107,7 @@ export async function findRevisionDiff(
       result.objects.commits[commitHash] = commit;
       result.commitChains.push(commitHash);
       // Collect tree objects
-      await collectTreeObjects(commit.tree_hash);
+      await collectTreeObjects(commit.content.tree_hash);
       return true;
     }
 
@@ -119,10 +119,10 @@ export async function findRevisionDiff(
     result.objects.commits[commitHash] = commit;
 
     // Collect tree objects
-    await collectTreeObjects(commit.tree_hash);
+    await collectTreeObjects(commit.content.tree_hash);
 
     // Recursively process parent commits
-    for (const parentHash of commit.parent_hashes) {
+    for (const parentHash of commit.content.parent_hashes) {
       const found = await collectCommits(parentHash, depth + 1);
       if (found) return true;
     }

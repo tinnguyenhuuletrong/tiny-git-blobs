@@ -24,7 +24,22 @@ import {
   findRevisionDiff,
 } from "@gitblobsdb/cores/src/versioning/diff";
 import { BsonPackAdapter } from "@gitblobsdb/adapter/src/pack/BsonPackAdapter";
-import { writeFile } from "fs/promises";
+import { writeFile, access } from "fs/promises";
+import { constants } from "fs/promises";
+import { readFile } from "fs/promises";
+
+// Define an enum for commands
+enum Command {
+  Help = "help",
+  Head = "head",
+  Add = "add",
+  GetBlob = "getBlob",
+  History = "history",
+  Snapshot = "snapshot",
+  Diff = "diff",
+  Export = "export",
+  Import = "import",
+}
 
 // Define color function
 const ASCII_COLORS = {
@@ -60,38 +75,43 @@ function parseOptions() {
 function printHelp() {
   console.log(color("gray", "Available commands:"));
   console.log(
-    color("gray", "\thead: Fetch and display the current head commit.")
-  );
-  console.log(
     color(
       "gray",
-      "\tadd <fileName> <fileContent>: Add a new file with the specified content."
+      `\t${Command.Head}: Fetch and display the current head commit.`
     )
   );
   console.log(
     color(
       "gray",
-      "\tgetBlob <blobHash>: Retrieve and display the content of a blob by its hash."
-    )
-  );
-  console.log(color("gray", "\thistory: Display the commit history."));
-  console.log(color("gray", "\thelp: Display this help message."));
-  console.log(
-    color(
-      "gray",
-      "\tsnapshot [commitHash]: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided)."
+      `\t${Command.Add} <fileName> <fileContent>: Add a new file with the specified content.`
     )
   );
   console.log(
     color(
       "gray",
-      "\tdiff [--save] <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)"
+      `\t${Command.GetBlob} <blobHash>: Retrieve and display the content of a blob by its hash.`
+    )
+  );
+  console.log(
+    color("gray", `\t${Command.History}: Display the commit history.`)
+  );
+  console.log(color("gray", `\t${Command.Help}: Display this help message.`));
+  console.log(
+    color(
+      "gray",
+      `\t${Command.Snapshot} [commitHash]: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).`
     )
   );
   console.log(
     color(
       "gray",
-      "\texport [path]: Export the entire storage to a binary file. (default path is ./backup.bin)"
+      `\t${Command.Diff} [--save] <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)`
+    )
+  );
+  console.log(
+    color(
+      "gray",
+      `\t${Command.Export} [path]: Export the entire storage to a binary file. (default path is ./backup.bin)`
     )
   );
 }
@@ -99,9 +119,13 @@ function printHelp() {
 function printCommitHistory(newToOldCommits: ICommit[]) {
   newToOldCommits.forEach((commit) => {
     console.log(`commit ${color("yellow", commit.hash)}`);
-    console.log(`Author: ${commit.author.name} <${commit.author.email}>`);
-    console.log(`Date: ${new Date(commit.author.timestamp).toLocaleString()}`);
-    console.log(`\n    ${commit.message}\n`);
+    console.log(
+      `Author: ${commit.content.author.name} <${commit.content.author.email}>`
+    );
+    console.log(
+      `Date: ${new Date(commit.content.author.timestamp).toLocaleString()}`
+    );
+    console.log(`\n    ${commit.content.message}\n`);
   });
 }
 
@@ -146,17 +170,17 @@ async function main() {
     process.stdout.write("\n" + color("reset", ""));
 
     const [cmd, ...args] = line.split(" ");
-    switch (cmd) {
-      case "help": {
+    switch (cmd as Command) {
+      case Command.Help: {
         printHelp();
         break;
       }
-      case "head": {
+      case Command.Head: {
         const head = await fetchHead(storage);
         console.dir(head, { depth: 10 });
         break;
       }
-      case "add": {
+      case Command.Add: {
         const fileName = args[0];
         const fileContent = args.slice(1).join(" ");
         if (!(fileName && fileContent)) {
@@ -167,7 +191,7 @@ async function main() {
         console.log(`done. head commit: ${color("yellow", commit.hash)}`);
         break;
       }
-      case "getBlob": {
+      case Command.GetBlob: {
         const blobHash = args[0];
         const hasObject = await storage.hasObject(blobHash);
         if (!hasObject) {
@@ -180,15 +204,15 @@ async function main() {
           break;
         }
         const decoder = new TextDecoder();
-        console.log(decoder.decode(blobObj.content));
+        console.log(decoder.decode(blobObj.content.data));
         break;
       }
-      case "history": {
+      case Command.History: {
         const newToOldCommits = (await listTopCommit(storage, 100)) ?? [];
         printCommitHistory(newToOldCommits);
         break;
       }
-      case "snapshot": {
+      case Command.Snapshot: {
         let commitHash = args[0];
         if (!commitHash) {
           commitHash = (await fetchCommitHashAtHead(storage)) ?? "";
@@ -215,7 +239,7 @@ async function main() {
 
         break;
       }
-      case "diff": {
+      case Command.Diff: {
         const flags = args.filter((itm) => itm.startsWith("-"));
         const params = args.filter((itm) => !itm.startsWith("-"));
         let fromCommitHash: string = params[0];
@@ -269,7 +293,7 @@ async function main() {
 
         break;
       }
-      case "export": {
+      case Command.Export: {
         const savedTopath = args[0] || "./backup.bin";
         const dataPack = await generateBackupPacket(storage);
         if (!dataPack) {
@@ -285,6 +309,29 @@ async function main() {
           )
         );
 
+        break;
+      }
+      case Command.Import: {
+        const importPath = args[0];
+        if (!importPath) {
+          console.error(color("gray", `importPath is missing`));
+          break;
+        }
+
+        try {
+          await access(importPath, constants.R_OK);
+        } catch (err: any) {
+          console.error(
+            color(
+              "gray",
+              `file is not exists or insufficient permission to access at ${importPath}`
+            )
+          );
+          break;
+        }
+
+        const bufData = await readFile(importPath);
+        await replaceStorageWithBackup(storage, bufData);
         break;
       }
       default:
@@ -324,7 +371,7 @@ async function addFile(
     type: "file",
   };
 
-  const currentEntries = head?.tree?.entries ?? {};
+  const currentEntries = head?.tree?.content.entries ?? {};
   const newTree = Object.fromEntries([
     ...Object.entries(currentEntries),
     [fileName, newTreeEntry],
@@ -388,8 +435,8 @@ async function fetchHead(storage: IStorageAdapter): Promise<{
   if (!commitObj)
     throw new Error(color("gray", `Commit at head not found: ${commitHash}`));
 
-  const treeHash = commitObj.tree_hash;
-  const treeObj = await storage.getTree(commitObj.tree_hash);
+  const treeHash = commitObj.content.tree_hash;
+  const treeObj = await storage.getTree(commitObj.content.tree_hash);
   if (!treeObj)
     throw new Error(color("gray", `Tree at head not found: ${treeHash}`));
 
@@ -441,7 +488,7 @@ async function dfsFromCommit(
 
     onVisitFn(commitObj);
 
-    for (const hash of commitObj.parent_hashes) {
+    for (const hash of commitObj.content.parent_hashes) {
       queue.push(hash);
     }
   }
@@ -508,6 +555,21 @@ async function generateBackupPacket(storage: IStorageAdapter) {
   const packer = new BsonPackAdapter();
   const res = packer.packObjects(packObject);
   return res;
+}
+
+async function replaceStorageWithBackup(
+  storage: IStorageAdapter,
+  bufData: Buffer
+) {
+  const storageExt = storage.asStorageExt?.();
+  if (!storageExt) return null;
+
+  const packer = new BsonPackAdapter();
+  const packObj = packer.unpackObjects(bufData);
+
+  await storageExt.replaceWithStorageSnapshot(packObj);
+
+  return true;
 }
 
 main();

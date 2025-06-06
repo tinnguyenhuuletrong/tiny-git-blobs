@@ -33,7 +33,7 @@ export async function appStartingUp(
 export async function downloadBlobData(state: IAppState, blob_hash: string) {
   const blobObj = await state.core.storage?.getBlob(blob_hash);
   if (!blobObj) return null;
-  return blobObj.content;
+  return blobObj.content.data;
 }
 
 export async function listTop10Commits(state: IAppState) {

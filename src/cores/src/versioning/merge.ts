@@ -27,16 +27,16 @@ export function mergeTrees(
 
   // Get all unique paths from all trees
   const allPaths = new Set([
-    ...Object.keys(base.entries),
-    ...Object.keys(ours.entries),
-    ...Object.keys(theirs.entries),
+    ...Object.keys(base.content.entries),
+    ...Object.keys(ours.content.entries),
+    ...Object.keys(theirs.content.entries),
   ]);
 
   // Process each path
   for (const path of allPaths) {
-    const baseEntry = base.entries[path] || null;
-    const ourEntry = ours.entries[path] || null;
-    const theirEntry = theirs.entries[path] || null;
+    const baseEntry = base.content.entries[path] || null;
+    const ourEntry = ours.content.entries[path] || null;
+    const theirEntry = theirs.content.entries[path] || null;
 
     // Check for conflicts
     if (hasConflict(baseEntry, ourEntry, theirEntry)) {
@@ -54,7 +54,7 @@ export function mergeTrees(
   }
 
   return {
-    merged: { hash: "", entries: mergedEntries }, // Hash will be computed by caller
+    merged: { type: "tree", hash: "", content: { entries: mergedEntries } }, // Hash will be computed by caller
     conflicts,
   };
 }

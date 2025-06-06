@@ -8,6 +8,7 @@ import {
   createCommit,
   createMetadata,
 } from "@gitblobsdb/cores/src/objects/create";
+import { IObject, IPackObject } from "@gitblobsdb/interface";
 
 describe("FileSystemStorageAdapter Integration", () => {
   const TEST_DIR = join(process.cwd(), "_tmp/test-storage-integration");
@@ -76,20 +77,20 @@ describe("FileSystemStorageAdapter Integration", () => {
     // 7. Verify all objects can be retrieved
     const retrievedBlob = await adapter.getBlob(blob.hash);
     expect(retrievedBlob).not.toBeNull();
-    expect(retrievedBlob?.content).toEqual(content);
+    expect(retrievedBlob?.content.data).toEqual(content);
 
     const retrievedMetadata = await adapter.getMetadata(metadata.hash);
     expect(retrievedMetadata).not.toBeNull();
-    expect(retrievedMetadata?.data).toEqual(metadata.data);
+    expect(retrievedMetadata?.content.data).toEqual(metadata.content.data);
 
     const retrievedTree = await adapter.getTree(tree.hash);
     expect(retrievedTree).not.toBeNull();
-    expect(retrievedTree?.entries).toEqual(tree.entries);
+    expect(retrievedTree?.content.entries).toEqual(tree.content.entries);
 
     const retrievedCommit = await adapter.getCommit(commit.hash);
     expect(retrievedCommit).not.toBeNull();
-    expect(retrievedCommit?.tree_hash).toBe(tree.hash);
-    expect(retrievedCommit?.parent_hashes).toEqual([]);
+    expect(retrievedCommit?.content.tree_hash).toBe(tree.hash);
+    expect(retrievedCommit?.content.parent_hashes).toEqual([]);
 
     // 8. Verify refs and HEAD
     const ref = await adapter.getRef("main");
@@ -202,6 +203,156 @@ describe("FileSystemStorageAdapter Integration", () => {
 
     // 8. Verify commit history
     const featureCommitRetrieved = await adapter.getCommit(featureCommit.hash);
-    expect(featureCommitRetrieved?.parent_hashes).toContain(initialCommit.hash);
+    expect(featureCommitRetrieved?.content.parent_hashes).toContain(
+      initialCommit.hash
+    );
+  });
+
+  it("should scan all objects in storage", async () => {
+    // 1. Create and store test objects
+    const content = new TextEncoder().encode("Test content");
+    const blob = createBlob(content);
+    const metadata = createMetadata({
+      filename: "test.txt",
+      size: content.length,
+      mimeType: "text/plain",
+    });
+    const tree = createTree({
+      "test.txt": {
+        blob_hash: blob.hash,
+        metadata_hash: metadata.hash,
+        type: "file",
+      },
+    });
+    const commit = createCommit({
+      tree_hash: tree.hash,
+      parent_hashes: [],
+      author: {
+        name: "Test Author",
+        email: "test@example.com",
+        timestamp: new Date().toISOString(),
+      },
+      committer: {
+        name: "Test Committer",
+        email: "test@example.com",
+        timestamp: new Date().toISOString(),
+      },
+      message: "Test commit",
+    });
+
+    // Store all objects
+    await adapter.putBlob(blob);
+    await adapter.putMetadata(metadata);
+    await adapter.putTree(tree);
+    await adapter.putCommit(commit);
+
+    // 2. Scan objects and collect them
+    const scannedObjects = new Map<string, IObject>();
+    for await (const obj of adapter.scanObject()) {
+      scannedObjects.set(obj.hash, obj);
+    }
+
+    // 3. Verify all objects were found
+    expect(scannedObjects.size).toBe(4);
+    expect(scannedObjects.get(blob.hash)?.type).toBe("blob");
+    expect(scannedObjects.get(metadata.hash)?.type).toBe("metadata");
+    expect(scannedObjects.get(tree.hash)?.type).toBe("tree");
+    expect(scannedObjects.get(commit.hash)?.type).toBe("commit");
+  });
+
+  it("should replace storage with snapshot data", async () => {
+    // 1. Create initial objects
+    const content = new TextEncoder().encode("Initial content");
+    const blob = createBlob(content);
+    const metadata = createMetadata({
+      filename: "test.txt",
+      size: content.length,
+      mimeType: "text/plain",
+    });
+    const tree = createTree({
+      "test.txt": {
+        blob_hash: blob.hash,
+        metadata_hash: metadata.hash,
+        type: "file",
+      },
+    });
+    const commit = createCommit({
+      tree_hash: tree.hash,
+      parent_hashes: [],
+      author: {
+        name: "Test Author",
+        email: "test@example.com",
+        timestamp: new Date().toISOString(),
+      },
+      committer: {
+        name: "Test Committer",
+        email: "test@example.com",
+        timestamp: new Date().toISOString(),
+      },
+      message: "Initial commit",
+    });
+
+    // 2. Create snapshot data
+    const snapshotData: IPackObject = {
+      blobs: [blob],
+      trees: [tree],
+      commits: [commit],
+      metadata: [metadata],
+      _header: {
+        version: "1",
+        timestamp: new Date().toString(),
+        others: {
+          commit_head: commit.hash,
+        },
+      },
+    };
+
+    // 3. Replace storage with snapshot
+    await adapter.replaceWithStorageSnapshot(snapshotData);
+
+    // 4. Verify all objects were restored
+    const retrievedBlob = await adapter.getBlob(blob.hash);
+    expect(retrievedBlob).not.toBeNull();
+    expect(retrievedBlob?.content.data).toEqual(content);
+
+    const retrievedMetadata = await adapter.getMetadata(metadata.hash);
+    expect(retrievedMetadata).not.toBeNull();
+    expect(retrievedMetadata?.content.data).toEqual(metadata.content.data);
+
+    const retrievedTree = await adapter.getTree(tree.hash);
+    expect(retrievedTree).not.toBeNull();
+    expect(retrievedTree?.content.entries).toEqual(tree.content.entries);
+
+    const retrievedCommit = await adapter.getCommit(commit.hash);
+    expect(retrievedCommit).not.toBeNull();
+    expect(retrievedCommit?.content.tree_hash).toBe(tree.hash);
+
+    // 5. Verify HEAD was set correctly
+    const head = await adapter.getHead();
+    expect(head).not.toBeNull();
+    expect(head?.type).toBe("commit");
+    expect(head?.value).toBe(commit.hash);
+  });
+
+  it("should throw error when replacing storage with invalid snapshot data", async () => {
+    // Create invalid snapshot data (missing commit_head)
+    const invalidSnapshotData: IPackObject = {
+      blobs: [],
+      trees: [],
+      commits: [],
+      metadata: [],
+      _header: {
+        version: "1",
+        timestamp: new Date().toString(),
+        others: {},
+      },
+    };
+
+    // Attempt to replace storage with invalid snapshot
+    await expect(
+      adapter.replaceWithStorageSnapshot(invalidSnapshotData)
+    ).rejects.toThrow(
+      "snapshotData missing _header.others.commit_head. anything wrong ?"
+    );
   });
 });

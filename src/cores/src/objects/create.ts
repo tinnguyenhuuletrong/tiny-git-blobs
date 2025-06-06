@@ -6,7 +6,13 @@ import { hashBlob, hashCommit, hashMetadata, hashTree } from "../utils/hash";
  */
 export function createBlob(content: Uint8Array): IBlob {
   const hash = hashBlob(content);
-  return { hash, content };
+  return {
+    type: "blob",
+    hash,
+    content: {
+      data: content,
+    },
+  };
 }
 
 /**
@@ -14,7 +20,13 @@ export function createBlob(content: Uint8Array): IBlob {
  */
 export function createMetadata(data: Record<string, any>): IMetadata {
   const hash = hashMetadata(data);
-  return { hash, data };
+  return {
+    type: "metadata",
+    hash,
+    content: {
+      data,
+    },
+  };
 }
 
 /**
@@ -27,19 +39,29 @@ export function createTree(
   >
 ): ITree {
   const hash = hashTree(entries);
-  return { hash, entries };
+  return {
+    type: "tree",
+    hash,
+    content: {
+      entries,
+    },
+  };
 }
 
 /**
  * Create a new commit object
  */
-export function createCommit(params: {
+export function createCommit(content: {
   tree_hash: string;
   parent_hashes: string[];
   author: { name: string; email: string; timestamp: string };
   committer: { name: string; email: string; timestamp: string };
   message: string;
 }): ICommit {
-  const hash = hashCommit(params);
-  return { hash, ...params };
+  const hash = hashCommit(content);
+  return {
+    type: "commit",
+    hash,
+    content,
+  };
 }

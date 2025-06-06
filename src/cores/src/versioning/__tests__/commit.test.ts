@@ -247,9 +247,9 @@ describe("Commit Versioning Utilities", () => {
         message: "Merge commit",
       });
 
-      expect(mergeCommit.parent_hashes).toHaveLength(2);
-      expect(mergeCommit.parent_hashes).toContain(parent1.hash);
-      expect(mergeCommit.parent_hashes).toContain(parent2.hash);
+      expect(mergeCommit.content.parent_hashes).toHaveLength(2);
+      expect(mergeCommit.content.parent_hashes).toContain(parent1.hash);
+      expect(mergeCommit.content.parent_hashes).toContain(parent2.hash);
     });
   });
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { findRevisionDiff } from "../diff";
 import { MemoryStorageAdapter } from "@gitblobsdb/adapter";
-import type { IBlob, ITree, ICommit, IMetadata } from "@gitblobsdb/interface";
+import type { IBlob, ICommit, IMetadata, ITree } from "@gitblobsdb/interface";
 
 describe("findRevisionDiff", () => {
   let storage: MemoryStorageAdapter;
@@ -21,119 +21,167 @@ describe("findRevisionDiff", () => {
   beforeEach(async () => {
     storage = new MemoryStorageAdapter();
 
-    // Create mock objects
+    // Create mock blobs
     mockBlob1 = {
+      type: "blob",
       hash: "blob1",
-      content: new Uint8Array([1, 2, 3]),
+      content: {
+        data: new Uint8Array([1, 2, 3]),
+      },
     };
 
     mockBlob2 = {
+      type: "blob",
       hash: "blob2",
-      content: new Uint8Array([4, 5, 6]),
+      content: {
+        data: new Uint8Array([4, 5, 6]),
+      },
     };
 
     mockBlob3 = {
+      type: "blob",
       hash: "blob3",
-      content: new Uint8Array([7, 8, 9]),
+      content: {
+        data: new Uint8Array([7, 8, 9]),
+      },
     };
 
+    // Create mock metadata
     mockMetadata1 = {
+      type: "metadata",
       hash: "meta1",
-      data: { type: "text" },
+      content: {
+        data: {
+          size: 3,
+          type: "text/plain",
+        },
+      },
     };
 
     mockMetadata2 = {
+      type: "metadata",
       hash: "meta2",
-      data: { type: "binary" },
+      content: {
+        data: {
+          size: 3,
+          type: "text/plain",
+        },
+      },
     };
 
     mockMetadata3 = {
+      type: "metadata",
       hash: "meta3",
-      data: { type: "image" },
+      content: {
+        data: {
+          size: 3,
+          type: "text/plain",
+        },
+      },
     };
 
+    // Create mock trees
     mockTree1 = {
+      type: "tree",
       hash: "tree1",
-      entries: {
-        "file1.txt": {
-          blob_hash: "blob1",
-          metadata_hash: "meta1",
-          type: "file",
+      content: {
+        entries: {
+          "file1.txt": {
+            blob_hash: "blob1",
+            metadata_hash: "meta1",
+            type: "file",
+          },
         },
       },
     };
 
     mockTree2 = {
+      type: "tree",
       hash: "tree2",
-      entries: {
-        "file1.txt": {
-          blob_hash: "blob2",
-          metadata_hash: "meta2",
-          type: "file",
+      content: {
+        entries: {
+          "file1.txt": {
+            blob_hash: "blob2",
+            metadata_hash: "meta2",
+            type: "file",
+          },
         },
       },
     };
 
     mockTree3 = {
+      type: "tree",
       hash: "tree3",
-      entries: {
-        "file1.txt": {
-          blob_hash: "blob3",
-          metadata_hash: "meta3",
-          type: "file",
+      content: {
+        entries: {
+          "file1.txt": {
+            blob_hash: "blob3",
+            metadata_hash: "meta3",
+            type: "file",
+          },
         },
       },
     };
 
+    // Create mock commits
     mockCommit1 = {
+      type: "commit",
       hash: "commit1",
-      tree_hash: "tree1",
-      parent_hashes: [],
-      author: {
-        name: "Test Author",
-        email: "test@example.com",
-        timestamp: "2024-01-01T00:00:00Z",
+      content: {
+        tree_hash: "tree1",
+        parent_hashes: [],
+        author: {
+          name: "Test Author",
+          email: "test@example.com",
+          timestamp: "2024-01-01T00:00:00Z",
+        },
+        committer: {
+          name: "Test Committer",
+          email: "test@example.com",
+          timestamp: "2024-01-01T00:00:00Z",
+        },
+        message: "Initial commit",
       },
-      committer: {
-        name: "Test Committer",
-        email: "test@example.com",
-        timestamp: "2024-01-01T00:00:00Z",
-      },
-      message: "Initial commit",
     };
 
     mockCommit2 = {
+      type: "commit",
       hash: "commit2",
-      tree_hash: "tree2",
-      parent_hashes: ["commit1"],
-      author: {
-        name: "Test Author",
-        email: "test@example.com",
-        timestamp: "2024-01-02T00:00:00Z",
+      content: {
+        tree_hash: "tree2",
+        parent_hashes: ["commit1"],
+        author: {
+          name: "Test Author",
+          email: "test@example.com",
+          timestamp: "2024-01-02T00:00:00Z",
+        },
+        committer: {
+          name: "Test Committer",
+          email: "test@example.com",
+          timestamp: "2024-01-02T00:00:00Z",
+        },
+        message: "Second commit",
       },
-      committer: {
-        name: "Test Committer",
-        email: "test@example.com",
-        timestamp: "2024-01-02T00:00:00Z",
-      },
-      message: "Second commit",
     };
 
     mockCommit3 = {
+      type: "commit",
       hash: "commit3",
-      tree_hash: "tree3",
-      parent_hashes: ["commit2"],
-      author: {
-        name: "Test Author",
-        email: "test@example.com",
-        timestamp: "2024-01-03T00:00:00Z",
+      content: {
+        tree_hash: "tree3",
+        parent_hashes: ["commit2"],
+        author: {
+          name: "Test Author",
+          email: "test@example.com",
+          timestamp: "2024-01-03T00:00:00Z",
+        },
+        committer: {
+          name: "Test Committer",
+          email: "test@example.com",
+          timestamp: "2024-01-03T00:00:00Z",
+        },
+        message: "Third commit",
       },
-      committer: {
-        name: "Test Committer",
-        email: "test@example.com",
-        timestamp: "2024-01-03T00:00:00Z",
-      },
-      message: "Third commit",
     };
 
     // Store objects in the adapter

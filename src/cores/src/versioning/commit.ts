@@ -15,7 +15,7 @@ export function isFastForward(
   }
 
   // Check if the current commit is in the parent history of the new commit
-  const parentHashes = new Set(newCommit.parent_hashes);
+  const parentHashes = new Set(newCommit.content.parent_hashes);
   return parentHashes.has(currentCommit.hash);
 }
 
@@ -32,10 +32,10 @@ export function findCommonAncestor(
   }
 
   // Simple implementation: check if one commit is a direct ancestor of the other
-  if (commit1.parent_hashes.includes(commit2.hash)) {
+  if (commit1.content.parent_hashes.includes(commit2.hash)) {
     return commit2;
   }
-  if (commit2.parent_hashes.includes(commit1.hash)) {
+  if (commit2.content.parent_hashes.includes(commit1.hash)) {
     return commit1;
   }
 
@@ -61,5 +61,5 @@ export function createMergeCommit(params: {
  * Check if a commit is a merge commit
  */
 export function isMergeCommit(commit: ICommit): boolean {
-  return commit.parent_hashes.length > 1;
+  return commit.content.parent_hashes.length > 1;
 }

@@ -2,15 +2,62 @@
  * Core object interfaces for GitBlobsDB
  */
 
-export interface IBlob {
+type Satisfies<T extends U, U> = T;
+
+export type ObjectType = "blob" | "tree" | "commit" | "metadata";
+
+// Base interface for all objects
+export interface IObject {
+  type: ObjectType;
   hash: string;
-  content: Uint8Array;
+  content: IBlobContent | IMetadataContent | ICommitContent | ITreeContent;
 }
 
-export interface IMetadata {
-  hash: string;
+// Base interface for content types
+export interface IBlobContent {
+  data: Uint8Array;
+}
+
+export interface IMetadataContent {
   data: Record<string, any>;
 }
+
+export interface ITreeContent {
+  entries: Record<string, ITreeEntry>;
+}
+
+export interface ICommitContent {
+  tree_hash: string;
+  parent_hashes: string[];
+  author: IAuthor;
+  committer: IAuthor;
+  message: string;
+}
+
+// Specific object interfaces
+export interface IBlob extends IObject {
+  type: "blob";
+  content: IBlobContent;
+}
+type IBlobCheckTest = Satisfies<IBlob, IObject>;
+
+export interface IMetadata extends IObject {
+  type: "metadata";
+  content: IMetadataContent;
+}
+type IMetadataCheckTest = Satisfies<IMetadata, IObject>;
+
+export interface ITree extends IObject {
+  type: "tree";
+  content: ITreeContent;
+}
+type ITreeCheckTest = Satisfies<ITree, IObject>;
+
+export interface ICommit extends IObject {
+  type: "commit";
+  content: ICommitContent;
+}
+type ICommitCheckTest = Satisfies<ICommit, IObject>;
 
 export interface ITreeEntry {
   blob_hash: string;
@@ -18,24 +65,10 @@ export interface ITreeEntry {
   type: "file";
 }
 
-export interface ITree {
-  hash: string;
-  entries: Record<string, ITreeEntry>;
-}
-
 export interface IAuthor {
   name: string;
   email: string;
   timestamp: string; // ISO 8601
-}
-
-export interface ICommit {
-  hash: string;
-  tree_hash: string;
-  parent_hashes: string[];
-  author: IAuthor;
-  committer: IAuthor;
-  message: string;
 }
 
 export interface IRef {
@@ -48,7 +81,6 @@ export interface IHead {
   value: string;
 }
 
-export type ObjectType = "blob" | "tree" | "commit" | "metadata";
 export const AllObjectTypes: ObjectType[] = [
   "blob",
   "tree",
@@ -56,19 +88,13 @@ export const AllObjectTypes: ObjectType[] = [
   "metadata",
 ] as const;
 
-export interface IObject {
-  type: ObjectType;
-  hash: string;
-  content: Uint8Array | Record<string, any>;
-}
-
 export interface ITreeSnapshot {
   commitHash: string;
   treeData: Record<
     string,
     ITreeEntry & {
-      metadata: IMetadata["data"];
-      blob: IBlob["content"];
+      metadata: IMetadataContent["data"];
+      blob: IBlobContent["data"];
     }
   >;
 }

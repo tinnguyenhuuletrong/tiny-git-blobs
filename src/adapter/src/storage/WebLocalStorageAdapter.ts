@@ -47,10 +47,13 @@ export class WebLocalStorageAdapter implements IStorageAdapter {
   async getBlob(hash: string): Promise<IBlob | null> {
     const obj = await this.getObject(hash);
     if (obj?.type === "blob") {
+      const data = (obj as IBlob).content.data;
       return {
-        hash: obj.hash,
-        content: Uint8Array.from(obj.content as number[]),
-      };
+        ...obj,
+        content: {
+          data: Uint8Array.from(data),
+        },
+      } as IBlob;
     }
     return null;
   }
@@ -59,71 +62,44 @@ export class WebLocalStorageAdapter implements IStorageAdapter {
     await this.putObject({
       type: "blob",
       hash: blob.hash,
-      content: Array.from(blob.content),
+      content: { data: Array.from(blob.content.data) },
     });
   }
 
   async getTree(hash: string): Promise<ITree | null> {
     const obj = await this.getObject(hash);
     if (obj?.type === "tree") {
-      return {
-        hash: obj.hash,
-        entries: obj.content as Record<string, any>,
-      };
+      return obj as ITree;
     }
     return null;
   }
 
   async putTree(tree: ITree): Promise<void> {
-    await this.putObject({
-      type: "tree",
-      hash: tree.hash,
-      content: tree.entries,
-    });
+    await this.putObject(tree);
   }
 
   async getCommit(hash: string): Promise<ICommit | null> {
     const obj = await this.getObject(hash);
     if (obj?.type === "commit") {
-      const content = obj.content as Record<string, any>;
-      return {
-        hash: obj.hash,
-        tree_hash: content.tree_hash,
-        parent_hashes: content.parent_hashes,
-        author: content.author,
-        committer: content.committer,
-        message: content.message,
-      };
+      return obj as ICommit;
     }
     return null;
   }
 
   async putCommit(commit: ICommit): Promise<void> {
-    const { hash, ...content } = commit;
-    await this.putObject({
-      type: "commit",
-      hash,
-      content,
-    });
+    await this.putObject(commit);
   }
 
   async getMetadata(hash: string): Promise<IMetadata | null> {
     const obj = await this.getObject(hash);
     if (obj?.type === "metadata") {
-      return {
-        hash: obj.hash,
-        data: obj.content as Record<string, any>,
-      };
+      return obj as IMetadata;
     }
     return null;
   }
 
   async putMetadata(metadata: IMetadata): Promise<void> {
-    await this.putObject({
-      type: "metadata",
-      hash: metadata.hash,
-      content: metadata.data,
-    });
+    await this.putObject(metadata);
   }
 
   async getRef(name: string): Promise<IRef | null> {

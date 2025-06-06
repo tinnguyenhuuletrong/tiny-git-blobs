@@ -18,16 +18,16 @@ export async function createTreeSnapshot(
   }
 
   // Get the tree object
-  const tree = await storage.getTree(commit.tree_hash);
+  const tree = await storage.getTree(commit.content.tree_hash);
   if (!tree) {
-    throw new Error(`Tree not found: ${commit.tree_hash}`);
+    throw new Error(`Tree not found: ${commit.content.tree_hash}`);
   }
 
   // Initialize the tree data object
   const treeData: ITreeSnapshot["treeData"] = {};
 
   // Process each entry in the tree
-  for (const [path, entry] of Object.entries(tree.entries)) {
+  for (const [path, entry] of Object.entries(tree.content.entries)) {
     // Get the blob and metadata objects
     const [blob, metadata] = await Promise.all([
       storage.getBlob(entry.blob_hash),
@@ -41,8 +41,8 @@ export async function createTreeSnapshot(
     // Add the entry to the tree data
     treeData[path] = {
       ...entry,
-      metadata: metadata?.data ?? {},
-      blob: blob.content,
+      metadata: metadata?.content.data ?? {},
+      blob: blob.content.data,
     };
   }
 

@@ -17,9 +17,9 @@ describe("WebLocalStorageAdapter", () => {
   const TEST_PREFIX = "test-gitblobsdb";
 
   beforeEach(() => {
+    adapter = new WebLocalStorageAdapter("test-prefix");
     // Clear localStorage before each test
     localStorage.clear();
-    adapter = new WebLocalStorageAdapter(TEST_PREFIX);
   });
 
   afterEach(() => {
@@ -28,6 +28,21 @@ describe("WebLocalStorageAdapter", () => {
   });
 
   describe("Object Operations", () => {
+    it("should store and retrieve objects", async () => {
+      const blob: IBlob = {
+        type: "blob",
+        hash: "test-blob",
+        content: {
+          data: new Uint8Array([1, 2, 3]),
+        },
+      };
+
+      await adapter.putBlob(blob);
+      const retrieved = await adapter.getBlob("test-blob");
+
+      expect(retrieved).toEqual(blob);
+    });
+
     it("should return null for non-existent objects", async () => {
       const retrieved = await adapter.getObject("non-existent");
       expect(retrieved).toBeNull();
@@ -37,7 +52,9 @@ describe("WebLocalStorageAdapter", () => {
       const object: IObject = {
         type: "blob",
         hash: "test-hash",
-        content: new Uint8Array([1, 2, 3]),
+        content: {
+          data: new Uint8Array([1, 2, 3]),
+        },
       };
 
       expect(await adapter.hasObject("test-hash")).toBe(false);
@@ -49,7 +66,7 @@ describe("WebLocalStorageAdapter", () => {
       const object: IObject = {
         type: "blob",
         hash: "test-hash",
-        content: new Uint8Array([1, 2, 3]),
+        content: { data: new Uint8Array([1, 2, 3]) },
       };
 
       await adapter.putObject(object);
@@ -62,8 +79,11 @@ describe("WebLocalStorageAdapter", () => {
   describe("Blob Operations", () => {
     it("should store and retrieve blobs", async () => {
       const blob: IBlob = {
+        type: "blob",
         hash: "test-blob",
-        content: new Uint8Array([1, 2, 3]),
+        content: {
+          data: new Uint8Array([1, 2, 3]),
+        },
       };
 
       await adapter.putBlob(blob);
@@ -81,12 +101,15 @@ describe("WebLocalStorageAdapter", () => {
   describe("Tree Operations", () => {
     it("should store and retrieve trees", async () => {
       const tree: ITree = {
+        type: "tree",
         hash: "test-tree",
-        entries: {
-          "file1.txt": {
-            blob_hash: "blob1",
-            metadata_hash: "meta1",
-            type: "file",
+        content: {
+          entries: {
+            "file1.txt": {
+              blob_hash: "blob1",
+              metadata_hash: "meta1",
+              type: "file",
+            },
           },
         },
       };
@@ -106,20 +129,23 @@ describe("WebLocalStorageAdapter", () => {
   describe("Commit Operations", () => {
     it("should store and retrieve commits", async () => {
       const commit: ICommit = {
+        type: "commit",
         hash: "test-commit",
-        tree_hash: "test-tree",
-        parent_hashes: [],
-        author: {
-          name: "Test Author",
-          email: "test@example.com",
-          timestamp: new Date().toISOString(),
+        content: {
+          tree_hash: "test-tree",
+          parent_hashes: [],
+          author: {
+            name: "Test Author",
+            email: "test@example.com",
+            timestamp: new Date().toISOString(),
+          },
+          committer: {
+            name: "Test Committer",
+            email: "test@example.com",
+            timestamp: new Date().toISOString(),
+          },
+          message: "Test commit",
         },
-        committer: {
-          name: "Test Committer",
-          email: "test@example.com",
-          timestamp: new Date().toISOString(),
-        },
-        message: "Test commit",
       };
 
       await adapter.putCommit(commit);
@@ -137,10 +163,13 @@ describe("WebLocalStorageAdapter", () => {
   describe("Metadata Operations", () => {
     it("should store and retrieve metadata", async () => {
       const metadata: IMetadata = {
+        type: "metadata",
         hash: "test-metadata",
-        data: {
-          size: 123,
-          type: "text/plain",
+        content: {
+          data: {
+            size: 123,
+            type: "text/plain",
+          },
         },
       };
 

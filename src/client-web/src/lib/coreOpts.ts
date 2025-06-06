@@ -23,7 +23,7 @@ export async function addFile(
     type: "file",
   };
 
-  const currentEntries = head?.tree?.entries ?? {};
+  const currentEntries = head?.tree?.content.entries ?? {};
   const newTree = Object.fromEntries([
     ...Object.entries(currentEntries),
     [fileName, newTreeEntry],
@@ -86,8 +86,8 @@ export async function fetchHead(storage: IStorageAdapter): Promise<{
   const commitObj = await storage.getCommit(commitHash);
   if (!commitObj) throw new Error(`Commit at head not found: ${commitHash}`);
 
-  const treeHash = commitObj.tree_hash;
-  const treeObj = await storage.getTree(commitObj.tree_hash);
+  const treeHash = commitObj.content.tree_hash;
+  const treeObj = await storage.getTree(commitObj.content.tree_hash);
   if (!treeObj) throw new Error(`Tree at head not found: ${treeHash}`);
 
   return {
@@ -138,7 +138,7 @@ async function dfsFromCommit(
 
     onVisitFn(commitObj);
 
-    for (const hash of commitObj.parent_hashes) {
+    for (const hash of commitObj.content.parent_hashes) {
       queue.push(hash);
     }
   }
@@ -156,7 +156,7 @@ export async function updateFile(
   const newFileBlob = createBlob(encoder.encode(fileData));
   const parent_hashes = head?.commit.hash ? [head?.commit.hash] : [];
 
-  const currentEntries = { ...(head?.tree?.entries ?? {}) };
+  const currentEntries = { ...(head?.tree?.content.entries ?? {}) };
   if (!currentEntries[fileName]) throw new Error("File does not exist");
   currentEntries[fileName] = {
     blob_hash: newFileBlob.hash,
@@ -200,7 +200,7 @@ export async function deleteFile(storage: IStorageAdapter, fileName: string) {
   if (!head) throw new Error("No HEAD found");
   const parent_hashes = head?.commit.hash ? [head?.commit.hash] : [];
 
-  const currentEntries = { ...(head?.tree?.entries ?? {}) };
+  const currentEntries = { ...(head?.tree?.content.entries ?? {}) };
   if (!currentEntries[fileName]) throw new Error("File does not exist");
   delete currentEntries[fileName];
   const newTreeObj = createTree(currentEntries);
