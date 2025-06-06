@@ -77,48 +77,87 @@ function printHelp() {
   console.log(
     color(
       "gray",
-      `\t${Command.Head}: Fetch and display the current head commit.`
+      `\t${color(
+        "blue",
+        Command.Head
+      )}: Fetch and display the current head commit.`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${Command.Add} <fileName> <fileContent>: Add a new file with the specified content.`
+      `\t${color(
+        "blue",
+        Command.Add
+      )} <fileName> <fileContent>: Add a new file with the specified content.`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${Command.GetBlob} <blobHash>: Retrieve and display the content of a blob by its hash.`
-    )
-  );
-  console.log(
-    color("gray", `\t${Command.History}: Display the commit history.`)
-  );
-  console.log(color("gray", `\t${Command.Help}: Display this help message.`));
-  console.log(
-    color(
-      "gray",
-      `\t${Command.Snapshot} [commitHash]: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).`
+      `\t${color(
+        "blue",
+        Command.GetBlob
+      )} <blobHash>: Retrieve and display the content of a blob by its hash.`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${Command.Diff} [--save] <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)`
+      `\t${color("blue", Command.History)}: Display the commit history.`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${Command.Export} [path]: Export the entire storage to a binary file. (default path is ./backup.bin)`
+      `\t${color("blue", Command.Help)}: Display this help message.`
+    )
+  );
+  console.log(
+    color(
+      "gray",
+      `\t${color(
+        "blue",
+        Command.Snapshot
+      )} [commitHash]: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).`
+    )
+  );
+  console.log(
+    color(
+      "gray",
+      `\t${color(
+        "blue",
+        Command.Diff
+      )} [--save] <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)`
+    )
+  );
+  console.log(
+    color(
+      "gray",
+      `\t${color(
+        "blue",
+        Command.Export
+      )} [path]: Export the entire storage to a binary file. (default path is ./backup.bin)`
+    )
+  );
+  console.log(
+    color(
+      "gray",
+      `\t${color(
+        "blue",
+        Command.Import
+      )} <importPath>: Import a backup from the specified path.`
     )
   );
 }
 
 function printCommitHistory(newToOldCommits: ICommit[]) {
-  newToOldCommits.forEach((commit) => {
-    console.log(`commit ${color("yellow", commit.hash)}`);
+  newToOldCommits.forEach((commit, index) => {
+    const isHead = index === 0; // Assuming the first commit in the array is the head
+    if (isHead) {
+      console.log(color("cyan", "* HEAD")); // Arrow pointing to the head commit
+    }
+    console.log(`commit ${color(isHead ? "cyan" : "yellow", commit.hash)}`);
     console.log(
       `Author: ${commit.content.author.name} <${commit.content.author.email}>`
     );
@@ -332,6 +371,9 @@ async function main() {
 
         const bufData = await readFile(importPath);
         await replaceStorageWithBackup(storage, bufData);
+
+        const commit = await fetchCommitHashAtHead(storage);
+        console.log(`done. head commit: ${color("yellow", commit || "")}`);
         break;
       }
       default:
