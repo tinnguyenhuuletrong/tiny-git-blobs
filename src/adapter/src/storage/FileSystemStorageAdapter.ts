@@ -1,4 +1,4 @@
-import { join, dirname } from "path";
+import { join } from "path";
 import {
   mkdir,
   readFile,

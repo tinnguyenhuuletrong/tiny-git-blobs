@@ -6,11 +6,11 @@
   "main": "src/index",
   "scripts": {
     "test": "bun test",
-    "build": "bun build ./src/index.ts --outdir ./dist",
+    "build": "bunx tsc --noEmit && bun build ./src/index.ts --outdir ./dist",
     "dev": "bun build ./src/index.ts --outdir ./dist --watch"
   },
   "devDependencies": {
     "vitest": "^1.2.2",
     "typescript": "^5.3.3"
   }
-} 
+}

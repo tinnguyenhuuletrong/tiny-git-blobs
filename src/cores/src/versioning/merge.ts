@@ -1,9 +1,4 @@
-import type {
-  ITree,
-  ITreeEntry,
-  IPackObject,
-  IStorageAdapter,
-} from "@gitblobsdb/interface";
+import type { ITree, ITreeEntry, IStorageAdapter } from "@gitblobsdb/interface";
 import type { DiffResult } from "./diff";
 
 /**

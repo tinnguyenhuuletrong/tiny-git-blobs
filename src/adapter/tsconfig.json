@@ -6,8 +6,8 @@
     "composite": true
   },
   "include": ["src/**/*"],
-  "references": [
-    { "path": "../interface" },
-    { "path": "../cores" }
-  ]
+  // "references": [
+  //   { "path": "../interface" },
+  //   { "path": "../cores" }
+  // ]
 } 

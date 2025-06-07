@@ -4,11 +4,10 @@ import {
   hasMergeConflicts,
   getConflictedPaths,
   merge,
-  type MergeResult,
 } from "../merge";
 import type { ITree } from "@gitblobsdb/interface";
 import type { DiffResult } from "../diff";
-import { MemoryStorageAdapter } from "@gitblobsdb/adapter";
+import { MemoryStorageAdapter } from "@gitblobsdb/adapter/src/storage/MemoryStorageAdapter";
 
 describe("Merge Utilities", () => {
   describe("merge", () => {
@@ -466,7 +465,7 @@ describe("Merge Utilities", () => {
         },
       };
 
-      const { merged, conflicts } = mergeTrees(base, ours, theirs);
+      const { merged: _merge, conflicts } = mergeTrees(base, ours, theirs);
 
       expect(conflicts).toHaveLength(1);
       expect(conflicts[0]?.path).toBe("file1.txt");
@@ -512,7 +511,7 @@ describe("Merge Utilities", () => {
         },
       };
 
-      const { merged, conflicts } = mergeTrees(base, ours, theirs);
+      const { merged: _merge, conflicts } = mergeTrees(base, ours, theirs);
 
       expect(conflicts).toHaveLength(1);
       expect(conflicts[0]?.path).toBe("file1.txt");

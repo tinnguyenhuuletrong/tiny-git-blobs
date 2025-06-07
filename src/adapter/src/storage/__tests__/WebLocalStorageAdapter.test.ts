@@ -14,7 +14,6 @@ import type {
 
 describe("WebLocalStorageAdapter", () => {
   let adapter: WebLocalStorageAdapter;
-  const TEST_PREFIX = "test-gitblobsdb";
 
   beforeEach(() => {
     adapter = new WebLocalStorageAdapter("test-prefix");

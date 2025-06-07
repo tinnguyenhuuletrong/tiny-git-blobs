@@ -11,7 +11,7 @@ import type {
 } from "@gitblobsdb/interface";
 
 export class WebLocalStorageAdapter implements IStorageAdapter {
-  private readonly prefix: string;
+  public readonly prefix: string;
   private readonly objectsPrefix: string;
   private readonly refsPrefix: string;
   private readonly headKey: string;

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { merge, type MergeResult } from "../merge";
+import { merge } from "../merge";
 import type { DiffResult } from "../diff";
-import { MemoryStorageAdapter } from "@gitblobsdb/adapter";
+import { MemoryStorageAdapter } from "@gitblobsdb/adapter/src/storage/MemoryStorageAdapter";
 
 describe("Merge Integration Tests", () => {
   let storageA: MemoryStorageAdapter;
