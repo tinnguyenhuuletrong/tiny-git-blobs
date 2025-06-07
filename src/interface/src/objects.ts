@@ -83,6 +83,7 @@ export const AllObjectTypes: ObjectType[] = [
 ] as const;
 
 export interface ITreeSnapshot {
+  treeHash: string;
   commitHash: string;
   treeData: Record<
     string,

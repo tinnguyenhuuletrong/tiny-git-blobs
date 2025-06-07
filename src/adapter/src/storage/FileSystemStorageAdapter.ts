@@ -21,6 +21,7 @@ import type {
 } from "@gitblobsdb/interface";
 import { R_OK } from "constants";
 import { rm } from "fs/promises";
+import assert from "assert";
 
 async function exists(diskPath: string): Promise<boolean> {
   try {
@@ -59,6 +60,8 @@ export class FileSystemStorageAdapter
   }
 
   private async writeObject(object: IObject): Promise<void> {
+    if (!object.hash)
+      throw new Error(`Object hash is empty: ${JSON.stringify(object)} `);
     const path = this.getObjectPath(object.hash);
     await this.ensureDirectoryExists(this.objectsPath);
 

@@ -47,6 +47,7 @@ export async function createTreeSnapshot(
   }
 
   return {
+    treeHash: tree.hash,
     commitHash,
     treeData,
   };

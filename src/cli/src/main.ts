@@ -6,6 +6,8 @@ import {
   createBlob,
   createCommit,
   SnapshotHelper,
+  DiffHelper,
+  MergeHelper,
 } from "@gitblobsdb/cores";
 import { cwd } from "process";
 import {
@@ -37,6 +39,7 @@ enum Command {
   History = "history",
   Snapshot = "snapshot",
   Diff = "diff",
+  ApplyDiff = "applyDiff",
   Export = "export",
   Import = "import",
 }
@@ -149,6 +152,15 @@ function printHelp() {
       )} <importPath>: Import a backup from the specified path.`
     )
   );
+  console.log(
+    color(
+      "gray",
+      `\t${color(
+        "blue",
+        Command.ApplyDiff
+      )} <diffPath>: Apply a diff from the specified path (output from Command.Diff).`
+    )
+  );
 }
 
 function printCommitHistory(newToOldCommits: ICommit[]) {
@@ -170,6 +182,7 @@ function printCommitHistory(newToOldCommits: ICommit[]) {
 
 function printSnapshot(snapshot: ITreeSnapshot) {
   console.log(`commitHash: ${color("yellow", snapshot.commitHash)}`); // Yellow color for commitHash
+  console.log(`treeHash: ${color("yellow", snapshot.treeHash)}`); // Yellow color for commitHash
 
   const textDecoder = new TextDecoder();
 
@@ -352,28 +365,32 @@ async function main() {
       }
       case Command.Import: {
         const importPath = args[0];
-        if (!importPath) {
-          console.error(color("gray", `importPath is missing`));
-          break;
-        }
 
-        try {
-          await access(importPath, constants.R_OK);
-        } catch (err: any) {
-          console.error(
-            color(
-              "gray",
-              `file is not exists or insufficient permission to access at ${importPath}`
-            )
-          );
-          break;
-        }
-
-        const bufData = await readFile(importPath);
+        const bufData = await readFileAtPath(importPath);
+        if (!bufData) break;
         await replaceStorageWithBackup(storage, bufData);
 
         const commit = await fetchCommitHashAtHead(storage);
         console.log(`done. head commit: ${color("yellow", commit || "")}`);
+        break;
+      }
+      case Command.ApplyDiff: {
+        const diffPath = args[0];
+        const bufData = await readFileAtPath(diffPath);
+        if (!bufData) break;
+
+        const res = await applyDiff(storage, bufData);
+        if (res.isSuccess) {
+          const head = await fetchHead(storage);
+          console.log(
+            `done. head commit: ${color("yellow", head?.commit.hash || "")} - ${
+              head?.commit.content.message
+            }`
+          );
+        } else {
+          console.error(color("blue", `conflict : %O`), res.conflicts);
+        }
+
         break;
       }
       default:
@@ -385,6 +402,28 @@ async function main() {
     // change stdin color
     process.stdout.write(color("blue", "> "));
   }
+}
+
+async function readFileAtPath(path: string) {
+  if (!path) {
+    console.error(color("gray", `path is missing`));
+    return null;
+  }
+
+  try {
+    await access(path, constants.R_OK);
+  } catch (err: any) {
+    console.error(
+      color(
+        "gray",
+        `file is not exists or insufficient permission to access at ${path}`
+      )
+    );
+    return null;
+  }
+
+  const bufData = await readFile(path);
+  return bufData;
 }
 
 async function diff(
@@ -538,16 +577,7 @@ async function dfsFromCommit(
 
 async function generateDiffPacket(result: DiffResult) {
   const packer = new BsonPackAdapter();
-  return packer.packObjects({
-    commits: Object.values(result.objects.commits),
-    blobs: Object.values(result.objects.blobs),
-    trees: Object.values(result.objects.trees),
-    metadata: Object.values(result.objects.metadata),
-    _header: {
-      version: "1",
-      timestamp: new Date().toISOString(),
-    },
-  });
+  return packer.packObjects(diffResultToPackObject(result));
 }
 
 async function generateBackupPacket(storage: IStorageAdapter) {
@@ -612,6 +642,44 @@ async function replaceStorageWithBackup(
   await storageExt.replaceWithStorageSnapshot(packObj);
 
   return true;
+}
+
+async function applyDiff(storage: IStorageAdapter, bufData: Buffer) {
+  const packer = new BsonPackAdapter();
+  const packObj = packer.unpackObjects(bufData);
+
+  const diffResult = packObjectToDiffResult(packObj);
+
+  const res = await MergeHelper.merge(storage, diffResult);
+  return res;
+}
+
+function diffResultToPackObject(result: DiffResult): IPackObject {
+  return {
+    commits: Object.values(result.objects.commits),
+    blobs: Object.values(result.objects.blobs),
+    trees: Object.values(result.objects.trees),
+    metadata: Object.values(result.objects.metadata),
+    _header: {
+      version: "1",
+      timestamp: new Date().toISOString(),
+      others: {
+        commitChains: JSON.stringify(result.commitChains),
+      },
+    },
+  };
+}
+
+function packObjectToDiffResult(pack: IPackObject): DiffResult {
+  return {
+    commitChains: JSON.parse(pack._header.others?.commitChains ?? "[]"),
+    objects: {
+      commits: Object.fromEntries(pack.commits.map((itm) => [itm.hash, itm])),
+      blobs: Object.fromEntries(pack.blobs.map((itm) => [itm.hash, itm])),
+      trees: Object.fromEntries(pack.trees.map((itm) => [itm.hash, itm])),
+      metadata: Object.fromEntries(pack.metadata.map((itm) => [itm.hash, itm])),
+    },
+  };
 }
 
 main();

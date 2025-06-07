@@ -1,5 +1,6 @@
 import type { ITree, ITreeEntry, IStorageAdapter } from "@gitblobsdb/interface";
 import type { DiffResult } from "./diff";
+import { createCommit, createTree } from "../objects/create";
 
 /**
  * Represents the result of a merge operation
@@ -105,17 +106,13 @@ export async function merge(
   await storage.putTree(mergedTree);
 
   // Create and store a new merge commit
-  const mergeCommit = {
-    type: "commit" as const,
-    hash: "", // Hash will be computed by storage
-    content: {
-      tree_hash: mergedTree.hash,
-      parent_hashes: [currentCommit.hash, targetCommit.hash],
-      author: targetCommit.content.author,
-      committer: targetCommit.content.committer,
-      message: `Merge ${targetCommit.hash} into ${currentCommit.hash}`,
-    },
-  };
+  const mergeCommit = createCommit({
+    tree_hash: mergedTree.hash,
+    parent_hashes: [targetCommit.hash],
+    author: targetCommit.content.author,
+    committer: targetCommit.content.committer,
+    message: `Merge ${targetCommit.hash} into ${currentCommit.hash}`,
+  });
 
   await storage.putCommit(mergeCommit);
 
@@ -175,7 +172,7 @@ export function mergeTrees(
   }
 
   return {
-    merged: { type: "tree", hash: "", content: { entries: mergedEntries } }, // Hash will be computed by caller
+    merged: createTree(mergedEntries),
     conflicts,
   };
 }
