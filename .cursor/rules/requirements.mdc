@@ -237,6 +237,36 @@ Note
     Process
         - Serialize Generate a Binary data
         - Deserialize Reconstruct from Binary data
+
+
+**Merge with PackObject**:
+    Given 
+        - Repo A(head = ha) and B(head = hb)
+        - Assumed A, B same commits chain, B ahead of A 
+    Then
+        - B generate a diff -> saved as DiffResult (ha, hb)
+```ts
+            interface DiffResult {
+            commitChains: string[]; // Sorted array of commit hashes from fromCommitHash to toCommitHash
+            objects: {
+                commits: Record<string, ICommit>;
+                blobs: Record<string, IBlob>;
+                trees: Record<string, ITree>;
+                metadata: Record<string, IMetadata>;
+            };
+            }
+```
+        - DiffResult showhow send to A
+        - on A. call merge function with signature below
+```ts
+/*
+Function check and apply the change in diff packate -> storage 
+check and insert ICommit, IBlob, ITree, IMetadata
+set HEAD into the latest one
+*/
+async function merge(storate: IStorage, diff:DiffResult)
+```
+        
     
 
 * **API Endpoints (Server - `//server/src/api/`)**:

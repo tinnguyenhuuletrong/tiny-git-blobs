@@ -1,4 +1,18 @@
-import type { ITree, ITreeEntry } from "@gitblobsdb/interface";
+import type {
+  ITree,
+  ITreeEntry,
+  IPackObject,
+  IStorageAdapter,
+} from "@gitblobsdb/interface";
+import type { DiffResult } from "./diff";
+
+/**
+ * Represents the result of a merge operation
+ */
+export interface MergeResult {
+  isSuccess: boolean;
+  conflicts: ITreeConflict[];
+}
 
 /**
  * Represents a merge conflict in a tree
@@ -8,6 +22,118 @@ export interface ITreeConflict {
   base: ITreeEntry | null;
   ours: ITreeEntry | null;
   theirs: ITreeEntry | null;
+}
+
+/**
+ * Merge changes from a diff into the current state and apply them to storage
+ * @param storage The storage adapter to use for object retrieval and storage
+ * @param diff The diff result containing changes to merge
+ * @returns MergeResult containing success status and any conflicts
+ */
+export async function merge(
+  storage: IStorageAdapter,
+  diff: DiffResult
+): Promise<MergeResult> {
+  // Get the current head commit
+  const head = await storage.getHead();
+  if (!head) {
+    throw new Error("No HEAD found in storage");
+  }
+
+  // Get the current tree
+  const currentCommit = await storage.getCommit(head.value);
+  if (!currentCommit) {
+    throw new Error("Current commit not found");
+  }
+
+  const currentTree = await storage.getTree(currentCommit.content.tree_hash);
+  if (!currentTree) {
+    throw new Error("Current tree not found");
+  }
+
+  // Get the target tree from the diff
+  const targetCommit =
+    diff.objects.commits[diff.commitChains[diff.commitChains.length - 1]];
+  if (!targetCommit) {
+    throw new Error("Target commit not found in diff");
+  }
+
+  const targetTree = diff.objects.trees[targetCommit.content.tree_hash];
+  if (!targetTree) {
+    throw new Error("Target tree not found in diff");
+  }
+
+  // Get the base tree (common ancestor)
+  const baseCommit = diff.objects.commits[diff.commitChains[0]];
+  if (!baseCommit) {
+    throw new Error("Base commit not found in diff");
+  }
+
+  const baseTree = diff.objects.trees[baseCommit.content.tree_hash];
+  if (!baseTree) {
+    throw new Error("Base tree not found in diff");
+  }
+
+  // Merge the trees
+  const { merged: mergedTree, conflicts } = mergeTrees(
+    baseTree,
+    currentTree,
+    targetTree
+  );
+
+  // If there are conflicts, return false
+  if (conflicts.length > 0) {
+    return {
+      isSuccess: false,
+      conflicts,
+    };
+  }
+
+  // Store all objects from the diff
+  for (const commit of Object.values(diff.objects.commits)) {
+    await storage.putCommit(commit);
+  }
+
+  for (const tree of Object.values(diff.objects.trees)) {
+    await storage.putTree(tree);
+  }
+
+  for (const blob of Object.values(diff.objects.blobs)) {
+    await storage.putBlob(blob);
+  }
+
+  for (const metadata of Object.values(diff.objects.metadata)) {
+    await storage.putMetadata(metadata);
+  }
+
+  // Store the merged tree
+  await storage.putTree(mergedTree);
+
+  // Create and store a new merge commit
+  const mergeCommit = {
+    type: "commit" as const,
+    hash: "", // Hash will be computed by storage
+    content: {
+      tree_hash: mergedTree.hash,
+      parent_hashes: [currentCommit.hash, targetCommit.hash],
+      author: targetCommit.content.author,
+      committer: targetCommit.content.committer,
+      message: `Merge ${targetCommit.hash} into ${currentCommit.hash}`,
+    },
+  };
+
+  await storage.putCommit(mergeCommit);
+
+  // Update HEAD to point to the new merge commit
+  await storage.setHead({
+    type: "commit",
+    value: mergeCommit.hash,
+  });
+
+  return {
+    isSuccess: true,
+    conflicts: [],
+  };
 }
 
 /**
