@@ -266,8 +266,38 @@ set HEAD into the latest one
 */
 async function merge(storate: IStorage, diff:DiffResult)
 ```
-        
-    
+
+*FastForward with PackObject**:
+
+The `fastForward` function is designed to apply a series of commits sequentially to the current state, provided that the current HEAD matches the first commit in the `commitChains`. This ensures a fast-forward operation without conflicts.
+
+### Process:
+1. **Validation**:
+   - Ensure the current HEAD matches the first commit in the `commitChains`.
+   - If not, throw an error indicating a mismatch.
+
+2. **Sequential Application**:
+   - Iterate through each commit in the `commitChains`.
+   - For each commit:
+     - Retrieve the commit object and its associated tree from the `DiffResult`.
+     - Store the commit and tree in the storage.
+     - Store any associated blobs referenced by the tree.
+
+3. **Update HEAD**:
+   - After applying all commits, update the HEAD to point to the last commit in the `commitChains`.
+
+### Input:
+- `storage`: An implementation of `IStorageAdapter` for object retrieval and storage.
+- `diff`: A `DiffResult` object containing the `commitChains` and associated objects (commits, trees, blobs, metadata).
+
+### Output:
+- Returns a `FastForwardResult` object with:
+  - `isSuccess: true` if the operation completes successfully.
+
+### Error Cases:
+- **HEAD Mismatch**: If the current HEAD does not match the first commit in the `commitChains`.
+- **Missing Objects**: If any commit, tree, or blob referenced in the `DiffResult` is not found.
+
 
 * **API Endpoints (Server - `//server/src/api/`)**:
     * **`GET /blob/:hash`**:
