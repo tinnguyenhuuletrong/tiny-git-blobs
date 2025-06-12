@@ -19,6 +19,13 @@ import type { Action, IAppState } from "@/types";
 import { FaPlus } from "react-icons/fa";
 import { Tooltip } from "@/components/ui/tooltip";
 import { addFile, fetchHead } from "@/lib/coreOpts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 
 export const MainPage: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -111,19 +118,28 @@ export const MainPage: React.FC = () => {
               accept=".bin"
               onChange={handleImport}
             />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => document.getElementById("import-file")?.click()}
-            >
-              Import
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              Export
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleHistoryOpen}>
-              History
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleHistoryOpen}>
+                  History
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    document.getElementById("import-file")?.click()
+                  }
+                >
+                  Import
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExport}>
+                  Export
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <div className="flex items-center justify-between mb-2">
