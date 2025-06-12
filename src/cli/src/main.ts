@@ -16,6 +16,7 @@ import {
   ICommit,
   IMetadata,
   IPackObject,
+  IPackResult,
   IStorageAdapter,
   IStorageAdapterEx,
   ITree,
@@ -122,7 +123,7 @@ function printHelp() {
       "gray",
       `\t${color("blue", Command.Snapshot)} ${color(
         "yellow",
-        "[commitHash]"
+        "[--save] [commitHash]"
       )}: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).`
     )
   );
@@ -266,7 +267,9 @@ async function main() {
         break;
       }
       case Command.Snapshot: {
-        let commitHash = args[0];
+        const flags = args.filter((itm) => itm.startsWith("-"));
+        const params = args.filter((itm) => !itm.startsWith("-"));
+        let commitHash = params[0];
         if (!commitHash) {
           commitHash = (await fetchCommitHashAtHead(storage)) ?? "";
         }
@@ -286,6 +289,19 @@ async function main() {
           );
 
           printSnapshot(snapshot);
+
+          if (flags.includes("--save")) {
+            const dataPack = await generateHeadSnapshotPacket(storage);
+            const savedTopath = "./backup_compact.bin";
+            await writeFile(savedTopath, dataPack.data);
+
+            console.log(
+              color(
+                "blue",
+                `saved to ${savedTopath} - ${dataPack.data.length} bytes`
+              )
+            );
+          }
         } catch (err: any) {
           console.warn(color("gray", err.message));
         }
@@ -585,6 +601,56 @@ async function dfsFromCommit(
 async function generateDiffPacket(result: DiffResult) {
   const packer = new BsonPackAdapter();
   return packer.packObjects(diffResultToPackObject(result));
+}
+
+async function generateHeadSnapshotPacket(
+  storage: IStorageAdapter
+): Promise<IPackResult> {
+  const others: Record<string, string> = {};
+  const packObject: IPackObject = {
+    commits: [],
+    trees: [],
+    blobs: [],
+    metadata: [],
+
+    _header: {
+      version: "1",
+      timestamp: new Date().toString(),
+      others,
+    },
+  };
+
+  const currentHead = await fetchHead(storage);
+  if (!currentHead) throw new Error("HEAD not found");
+
+  const trimHeadCommit = structuredClone(currentHead.commit);
+
+  // detect parent
+  trimHeadCommit.content.parent_hashes = [];
+
+  // head commit
+  packObject.commits.push(trimHeadCommit);
+
+  // head tree
+  packObject.trees.push(currentHead.tree);
+
+  // blob & metadata
+  for (const itm of Object.values(currentHead.tree.content.entries)) {
+    const blobObj = await storage.getBlob(itm.blob_hash);
+    if (blobObj) packObject.blobs.push(blobObj);
+
+    if (itm.metadata_hash) {
+      const metaObj = await storage.getMetadata(itm.metadata_hash);
+      if (metaObj) packObject.metadata.push(metaObj);
+    }
+  }
+
+  others["commit_head"] = currentHead?.commit.hash || "";
+  others["tree_head"] = currentHead?.tree.hash || "";
+
+  const packer = new BsonPackAdapter();
+  const res = packer.packObjects(packObject);
+  return res;
 }
 
 async function generateBackupPacket(storage: IStorageAdapter) {

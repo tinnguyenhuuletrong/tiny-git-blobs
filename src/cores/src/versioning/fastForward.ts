@@ -30,7 +30,7 @@ export async function fastForward(
     throw new Error("HEAD does not match the first commit in commitChains");
   }
 
-  // Apply commits one by one
+  // Apply commits one by o
   for (const commitHash of diff.commitChains) {
     const commit = diff.objects.commits[commitHash];
     if (!commit) {
@@ -38,20 +38,35 @@ export async function fastForward(
     }
 
     // Store the commit
-    await storage.putCommit(commit);
+    if (!(await storage.hasObject(commit.hash))) {
+      await storage.putCommit(commit);
+    }
 
     // Store the associated tree
     const tree = diff.objects.trees[commit.content.tree_hash];
     if (!tree) {
       throw new Error(`Tree ${commit.content.tree_hash} not found in diff`);
     }
-    await storage.putTree(tree);
+
+    if (!(await storage.hasObject(tree.hash))) {
+      await storage.putTree(tree);
+    }
 
     // Store associated blobs
-    for (const blobHash of Object.keys(tree.content.entries)) {
+    for (const treeEntry of Object.values(tree.content.entries)) {
+      const blobHash = treeEntry.blob_hash;
+      const metadataHash = treeEntry.metadata_hash;
       const blob = diff.objects.blobs[blobHash];
       if (blob) {
-        await storage.putBlob(blob);
+        if (!(await storage.hasObject(blobHash))) {
+          await storage.putBlob(blob);
+        }
+      }
+      const metadata = diff.objects.metadata[metadataHash];
+      if (metadata) {
+        if (!(await storage.hasObject(metadataHash))) {
+          await storage.putMetadata(metadata);
+        }
       }
     }
   }
