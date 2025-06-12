@@ -157,10 +157,13 @@ Note
 
 ### 5.2. Key Feature Implementation Guidelines
 
-* **Object Hashing (`/cores/utils/hash.ts`)**:
+#### 5.2.1 **Object Hashing (`/cores/utils/hash.ts`)**:
+
     * Implement SHA-256 hashing for binary data (Blobs).
     * Implement SHA-256 hashing for JSON objects (Trees, Commits, Metadata) by first getting a stable, canonical JSON string representation.
-* **Local Commit (Client-side & Core logic)**:
+
+#### 5.2.2 **Local Commit (Client-side & Core logic)**:
+
     1.  Client gathers changes from its working state.
     2.  For each changed/new file, create Blob and Metadata objects, store them via `IndexedDBStorageAdapter`, get their hashes.
     3.  Construct a new Tree object using these hashes. Store it, get its hash.
@@ -171,7 +174,8 @@ Note
     8.  Update local HEAD.
     * This entire process is LOCAL FIRST.
 
-* **"Patched base on revision diff" (Object Transfer)**:
+#### 5.2.3 **"Patched base on revision diff" (Object Transfer)**:
+
     * The "diff" is the set of objects (commits, trees, blobs, metadata) that one peer has and the other needs. The system identifies these objects by traversing the commit graph from known common ancestors.
     Given
         - Client, Server have a local Storage
@@ -205,7 +209,8 @@ Note
         - Maximum depth exceeded: When the commit chain is too long (prevents stack overflow)
 
 
-* **"Tree Snapshot Transfer**:
+#### 5.2.4 **"Tree Snapshot Transfer**:
+
     Given
         - Client, Server have a local storage
         - Client only want to fetch tree and data a revision with `commitHash`
@@ -229,7 +234,8 @@ Note
         - Blob not found: When a blob referenced by a tree doesn't exist
         - Metadata not found: When metadata referenced by a tree doesn't exist
 
-**PackObject**:
+#### 5.2.5 **PackObject**:
+
     Given
         - A list of objects with type Commit[], Tree[], Blob[], Metadata[]
         - Headers: 
@@ -239,7 +245,8 @@ Note
         - Deserialize Reconstruct from Binary data
 
 
-**Merge with PackObject**:
+#### 5.2.6 **Merge with PackObject**:
+
     Given 
         - Repo A(head = ha) and B(head = hb)
         - Assumed A, B same commits chain, B ahead of A 
@@ -267,11 +274,11 @@ set HEAD into the latest one
 async function merge(storate: IStorage, diff:DiffResult)
 ```
 
-*FastForward with PackObject**:
+#### 5.2.7 **FastForward with PackObject**:
 
 The `fastForward` function is designed to apply a series of commits sequentially to the current state, provided that the current HEAD matches the first commit in the `commitChains`. This ensures a fast-forward operation without conflicts.
 
-### Process:
+Process:
 1. **Validation**:
    - Ensure the current HEAD matches the first commit in the `commitChains`.
    - If not, throw an error indicating a mismatch.
@@ -286,20 +293,20 @@ The `fastForward` function is designed to apply a series of commits sequentially
 3. **Update HEAD**:
    - After applying all commits, update the HEAD to point to the last commit in the `commitChains`.
 
-### Input:
+Input:
 - `storage`: An implementation of `IStorageAdapter` for object retrieval and storage.
 - `diff`: A `DiffResult` object containing the `commitChains` and associated objects (commits, trees, blobs, metadata).
 
-### Output:
+Output:
 - Returns a `FastForwardResult` object with:
   - `isSuccess: true` if the operation completes successfully.
 
-### Error Cases:
+Error Cases:
 - **HEAD Mismatch**: If the current HEAD does not match the first commit in the `commitChains`.
 - **Missing Objects**: If any commit, tree, or blob referenced in the `DiffResult` is not found.
 
 
-* **API Endpoints (Server - `//server/src/api/`)**:
+#### 5.2.8 **API Endpoints (Server - `//server/src/api/`)**:
     * **`GET /blob/:hash`**:
         * Input: `hash` (string)
         * Action: Retrieve blob file from `objects/{first_two_chars_of_hash}/{rest_of_hash}` using `FileSystemStorageAdapter`.
@@ -328,7 +335,8 @@ The `fastForward` function is designed to apply a series of commits sequentially
             * Uses `/cores/versioning/merge.ts` (e.g., `threeWayMerge(...)` or `findCommonAncestor(...)`).
             * Detects conflicts (e.g., same path in Tree points to different blob hashes). *Initial conflict handling: report to user; auto-resolve not in V1.*
             * If successful merge, create a new local merge commit.
-* **Local HEAD Revision (Client-side)**:
+
+#### 5.2.9 **Local HEAD Revision (Client-side)**:
     * Managed in `IndexedDB`. Essential for knowing the current branch/commit context for local operations.
 
 ---
