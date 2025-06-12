@@ -1,4 +1,4 @@
-import type { IStorageAdapter, ITreeEntry } from "@gitblobsdb/interface";
+import type { IStorageAdapter } from "@gitblobsdb/interface";
 import type { DiffResult } from "./diff";
 
 /**
@@ -6,16 +6,6 @@ import type { DiffResult } from "./diff";
  */
 export interface FastForwardResult {
   isSuccess: boolean;
-}
-
-/**
- * Represents a merge conflict in a tree
- */
-export interface ITreeConflict {
-  path: string;
-  base: ITreeEntry | null;
-  ours: ITreeEntry | null;
-  theirs: ITreeEntry | null;
 }
 
 /**

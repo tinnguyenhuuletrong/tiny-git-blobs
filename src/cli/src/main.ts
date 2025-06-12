@@ -8,6 +8,7 @@ import {
   SnapshotHelper,
   DiffHelper,
   MergeHelper,
+  FastForwardHelper,
 } from "@gitblobsdb/cores";
 import { cwd } from "process";
 import {
@@ -89,19 +90,19 @@ function printHelp() {
   console.log(
     color(
       "gray",
-      `\t${color(
-        "blue",
-        Command.Add
-      )} <fileName> <fileContent>: Add a new file with the specified content.`
+      `\t${color("blue", Command.Add)} ${color(
+        "yellow",
+        "<fileName> <fileContent>"
+      )}: Add a new file with the specified content.`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${color(
-        "blue",
-        Command.GetBlob
-      )} <blobHash>: Retrieve and display the content of a blob by its hash.`
+      `\t${color("blue", Command.GetBlob)} ${color(
+        "yellow",
+        "<blobHash>"
+      )}: Retrieve and display the content of a blob by its hash.`
     )
   );
   console.log(
@@ -119,46 +120,46 @@ function printHelp() {
   console.log(
     color(
       "gray",
-      `\t${color(
-        "blue",
-        Command.Snapshot
-      )} [commitHash]: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).`
+      `\t${color("blue", Command.Snapshot)} ${color(
+        "yellow",
+        "[commitHash]"
+      )}: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${color(
-        "blue",
-        Command.Diff
-      )} [--save] <fromCommitHash> [toCommitHash]: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)`
+      `\t${color("blue", Command.Export)} ${color(
+        "yellow",
+        "[path]"
+      )}: Export the entire storage to a binary file. (default path is ./backup.bin)`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${color(
-        "blue",
-        Command.Export
-      )} [path]: Export the entire storage to a binary file. (default path is ./backup.bin)`
+      `\t${color("blue", Command.Import)} ${color(
+        "yellow",
+        "<importPath>"
+      )}: Import a backup from the specified path.`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${color(
-        "blue",
-        Command.Import
-      )} <importPath>: Import a backup from the specified path.`
+      `\t${color("blue", Command.Diff)} ${color(
+        "yellow",
+        "[--save] [fromCommitHash] [toCommitHash]"
+      )}: Generate diff package update data from fromCommitHash to toCommitHash. (default fromCommitHash is head)`
     )
   );
   console.log(
     color(
       "gray",
-      `\t${color(
-        "blue",
-        Command.ApplyDiff
-      )} <diffPath>: Apply a diff from the specified path (output from Command.Diff).`
+      `\t${color("blue", Command.ApplyDiff)} ${color(
+        "yellow",
+        "<diffPath>"
+      )}: Apply a diff from the specified path (output from Command.Diff).`
     )
   );
 }
@@ -379,16 +380,22 @@ async function main() {
         const bufData = await readFileAtPath(diffPath);
         if (!bufData) break;
 
-        const res = await applyDiff(storage, bufData);
-        if (res.isSuccess) {
-          const head = await fetchHead(storage);
-          console.log(
-            `done. head commit: ${color("yellow", head?.commit.hash || "")} - ${
-              head?.commit.content.message
-            }`
+        try {
+          const res = await applyDiff(storage, bufData);
+          if (res.isSuccess) {
+            const head = await fetchHead(storage);
+            console.log(
+              `done. head commit: ${color(
+                "yellow",
+                head?.commit.hash || ""
+              )} - ${head?.commit.content.message}`
+            );
+          }
+        } catch (err: unknown) {
+          console.error(
+            color("blue", `conflict : %O`),
+            (err as Error)?.message
           );
-        } else {
-          console.error(color("blue", `conflict : %O`), res.conflicts);
         }
 
         break;
@@ -650,7 +657,7 @@ async function applyDiff(storage: IStorageAdapter, bufData: Buffer) {
 
   const diffResult = packObjectToDiffResult(packObj);
 
-  const res = await MergeHelper.merge(storage, diffResult);
+  const res = await FastForwardHelper.fastForward(storage, diffResult);
   return res;
 }
 
