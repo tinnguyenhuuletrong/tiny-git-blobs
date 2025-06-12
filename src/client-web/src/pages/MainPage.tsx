@@ -5,11 +5,14 @@ import { HistoryModal } from "../components/HistoryModal";
 import { Button } from "../components/ui/button";
 import { PreviewModal } from "../components/PreviewModal";
 import { AddEditModal } from "../components/AddEditModal";
+import { Toast } from "../components/ui/toast";
 import {
   downloadBlobData,
   listTop10Commits,
   updateFileData,
   deleteFileData,
+  exportStorageData,
+  importStorageData,
 } from "@/lib/appLogic";
 import { saveArrayBuffer } from "@/lib/utils";
 import type { Action, IAppState } from "@/types";
@@ -19,6 +22,10 @@ import { addFile, fetchHead } from "@/lib/coreOpts";
 
 export const MainPage: React.FC = () => {
   const { state, dispatch } = useAppContext();
+  const [toast, setToast] = React.useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   const {
     mainPage: { treeSnapshot },
@@ -55,6 +62,37 @@ export const MainPage: React.FC = () => {
     }
   };
 
+  const handleExport = async () => {
+    const result = await exportStorageData(state);
+    if (result) {
+      saveArrayBuffer(result.data, "backup.bin");
+      setToast({ message: "Export successful", type: "success" });
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await importStorageData(state, arrayBuffer);
+      if (result) {
+        // Refresh tree snapshot
+        const storage = state.core.storage;
+        if (storage) {
+          const head = await fetchHead(storage);
+          if (head) {
+            dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
+          }
+        }
+        setToast({ message: "Import successful", type: "success" });
+      }
+    } catch (error) {
+      setToast({ message: "Import failed", type: "error" });
+    }
+  };
+
   return (
     <div className="min-h-svh flex flex-col items-center p-2 bg-background">
       <div className="w-full max-w-xl bg-card rounded-lg shadow-lg p-4 flex flex-col gap-2 mt-4">
@@ -65,9 +103,28 @@ export const MainPage: React.FC = () => {
           <span className="truncate max-w-3/4">
             Snapshot hash: {treeSnapshot?.hash}
           </span>
-          <Button variant="outline" size="sm" onClick={handleHistoryOpen}>
-            History
-          </Button>
+          <div className="flex gap-2">
+            <input
+              type="file"
+              id="import-file"
+              className="hidden"
+              accept=".bin"
+              onChange={handleImport}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById("import-file")?.click()}
+            >
+              Import
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleHistoryOpen}>
+              History
+            </Button>
+          </div>
         </div>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">Snapshot Tree</h2>
@@ -116,6 +173,13 @@ export const MainPage: React.FC = () => {
         }}
         onClose={handleModalClose}
       />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

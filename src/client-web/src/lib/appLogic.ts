@@ -64,3 +64,18 @@ export async function deleteFileData(state: IAppState, fileName: string) {
   const head = await CoreOps.fetchHead(storage);
   return head?.tree;
 }
+
+export async function exportStorageData(state: IAppState) {
+  const storage = state.core.storage;
+  if (!storage) return null;
+  return await CoreOps.exportStorage(storage);
+}
+
+export async function importStorageData(
+  state: IAppState,
+  bufData: ArrayBuffer
+) {
+  const storage = state.core.storage;
+  if (!storage) return null;
+  return await CoreOps.importStorage(storage, bufData);
+}

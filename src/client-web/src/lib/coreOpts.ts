@@ -3,8 +3,13 @@ import type {
   ITreeEntry,
   ITree,
   ICommit,
+  IBlob,
+  IMetadata,
+  IPackObject,
+  IPackResult,
 } from "@gitblobsdb/interface";
 import { createBlob, createCommit, createTree } from "@gitblobsdb/cores";
+import { BsonPackAdapter } from "@gitblobsdb/adapter/src/pack/BsonPackAdapter";
 
 export async function addFile(
   storage: IStorageAdapter,
@@ -232,4 +237,70 @@ export async function deleteFile(storage: IStorageAdapter, fileName: string) {
     value: newCommit.hash,
   });
   return newCommit;
+}
+
+export async function exportStorage(
+  storage: IStorageAdapter
+): Promise<IPackResult | null> {
+  const storageExt = storage.asStorageExt?.();
+  if (!storageExt) return null;
+
+  const others: Record<string, string> = {};
+  const packObject: IPackObject = {
+    commits: [],
+    trees: [],
+    blobs: [],
+    metadata: [],
+
+    _header: {
+      version: "1",
+      timestamp: new Date().toString(),
+      others,
+    },
+  };
+
+  const currentHead = await fetchHead(storage);
+
+  for await (const itm of storageExt.scanObject()) {
+    switch (itm.type) {
+      case "commit": {
+        packObject.commits.push(itm as unknown as ICommit);
+        break;
+      }
+      case "blob": {
+        packObject.blobs.push(itm as unknown as IBlob);
+        break;
+      }
+      case "metadata": {
+        packObject.metadata.push(itm as unknown as IMetadata);
+        break;
+      }
+      case "tree": {
+        packObject.trees.push(itm as unknown as ITree);
+        break;
+      }
+    }
+  }
+
+  others["commit_head"] = currentHead?.commit.hash || "";
+  others["tree_head"] = currentHead?.tree.hash || "";
+
+  const packer = new BsonPackAdapter();
+  const res = packer.packObjects(packObject);
+  return res;
+}
+
+export async function importStorage(
+  storage: IStorageAdapter,
+  bufData: ArrayBuffer
+) {
+  const storageExt = storage.asStorageExt?.();
+  if (!storageExt) return null;
+
+  const packer = new BsonPackAdapter();
+  const packObj = packer.unpackObjects(new Uint8Array(bufData));
+
+  await storageExt.replaceWithStorageSnapshot(packObj);
+
+  return true;
 }

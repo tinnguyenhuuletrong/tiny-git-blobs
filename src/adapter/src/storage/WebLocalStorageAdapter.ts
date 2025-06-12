@@ -8,9 +8,12 @@ import type {
   ITree,
   IStorageAdapter,
   IStorageAdapterEx,
+  IPackObject,
 } from "@gitblobsdb/interface";
 
-export class WebLocalStorageAdapter implements IStorageAdapter {
+export class WebLocalStorageAdapter
+  implements IStorageAdapter, IStorageAdapterEx
+{
   public readonly prefix: string;
   private readonly objectsPrefix: string;
   private readonly refsPrefix: string;
@@ -149,6 +152,64 @@ export class WebLocalStorageAdapter implements IStorageAdapter {
   }
 
   asStorageExt(): IStorageAdapterEx | null {
-    return null;
+    return this;
+  }
+
+  async *scanObject(): AsyncGenerator<IObject> {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (!key?.startsWith(this.objectsPrefix)) continue;
+
+      const data = localStorage.getItem(key);
+      if (!data) continue;
+      const itm = JSON.parse(data) as IObject;
+
+      if (itm?.type === "blob") {
+        const data = (itm as IBlob).content.data;
+        yield {
+          ...itm,
+          content: {
+            data: Uint8Array.from(data),
+          },
+        } as IBlob;
+      } else {
+        yield itm;
+      }
+    }
+  }
+  async replaceWithStorageSnapshot(
+    storageSnapshot: IPackObject
+  ): Promise<boolean> {
+    const head = storageSnapshot._header.others?.["commit_head"];
+    if (!head)
+      throw new Error(
+        "snapshotData missing _header.others.commit_head. anything wrong ?"
+      );
+
+    // cleanup
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (!key?.startsWith(this.prefix)) continue;
+
+      localStorage.removeItem(key);
+    }
+
+    // extract object
+    await Promise.all([
+      Promise.all(storageSnapshot.blobs.map(this.putBlob.bind(this))),
+      Promise.all(storageSnapshot.commits.map(this.putCommit.bind(this))),
+      Promise.all(storageSnapshot.metadata.map(this.putMetadata.bind(this))),
+      Promise.all(storageSnapshot.trees.map(this.putTree.bind(this))),
+    ]);
+
+    // set head
+    await this.setHead({
+      type: "commit",
+      value: head,
+    });
+
+    return true;
   }
 }
