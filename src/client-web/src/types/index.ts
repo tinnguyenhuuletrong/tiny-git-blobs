@@ -12,7 +12,8 @@ export type Route =
   | "main"
   | "main/modalHistory"
   | "main/modalPreview"
-  | "main/modalAddEdit";
+  | "main/modalAddEdit"
+  | "main/modalDiff";
 
 export interface IAppState {
   core: {
@@ -37,6 +38,7 @@ export interface IAppState {
     fileName: string;
     fileContent: string;
   };
+  modalDiff: {};
 }
 
 // Action Types
@@ -67,4 +69,5 @@ export type Action =
         fileContent: string;
       };
     }
+  | { type: "SET_DIFF_MODAL"; payload: {} }
   | { type: "RESET_STATE" };

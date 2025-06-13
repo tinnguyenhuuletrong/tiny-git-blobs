@@ -5,6 +5,7 @@ import { HistoryModal } from "../components/HistoryModal";
 import { Button } from "../components/ui/button";
 import { PreviewModal } from "../components/PreviewModal";
 import { AddEditModal } from "../components/AddEditModal";
+import { DiffModal } from "../components/DiffModal";
 import { Toast } from "../components/ui/toast";
 import {
   downloadBlobData,
@@ -17,7 +18,12 @@ import {
 import { saveArrayBuffer } from "@/lib/utils";
 import type { Action, IAppState } from "@/types";
 import { FaPlus } from "react-icons/fa";
-import { FaHistory, FaFileImport, FaFileExport } from "react-icons/fa";
+import {
+  FaHistory,
+  FaFileImport,
+  FaFileExport,
+  FaCodeBranch,
+} from "react-icons/fa";
 import { Tooltip } from "@/components/ui/tooltip";
 import { addFile, fetchHead } from "@/lib/coreOpts";
 import {
@@ -57,6 +63,14 @@ export const MainPage: React.FC = () => {
     handleModalSave,
     handleModalClose,
   } = useAddEditModalHandler(state, dispatch);
+
+  const handleDiffOpen = () => {
+    dispatch({ type: "SET_ROUTE", payload: "main/modalDiff" });
+  };
+
+  const handleDiffClose = () => {
+    dispatch({ type: "SET_ROUTE", payload: "main" });
+  };
 
   const handleDeleteFile = async (deleteFileName: string) => {
     await deleteFileData(state, deleteFileName);
@@ -130,6 +144,10 @@ export const MainPage: React.FC = () => {
                   <FaHistory className="mr-2 h-4 w-4" />
                   History
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDiffOpen}>
+                  <FaCodeBranch className="mr-2 h-4 w-4" />
+                  Generate Diff
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
                     document.getElementById("import-file")?.click()
@@ -192,6 +210,10 @@ export const MainPage: React.FC = () => {
           handleModalSave(state.modalAddEdit.mode, fileName, fileContent);
         }}
         onClose={handleModalClose}
+      />
+      <DiffModal
+        open={state.route === "main/modalDiff"}
+        onClose={handleDiffClose}
       />
       {toast && (
         <Toast

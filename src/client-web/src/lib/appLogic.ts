@@ -1,6 +1,8 @@
 import type { IAppState, Action } from "@/types";
 import { WebLocalStorageAdapter } from "@gitblobsdb/adapter/src/storage/WebLocalStorageAdapter";
 import * as CoreOps from "./coreOpts";
+import { DiffHelper } from "@gitblobsdb/cores";
+import { BsonPackAdapter } from "@gitblobsdb/adapter/src/pack/BsonPackAdapter";
 
 export async function appStartingUp(
   state: IAppState,
@@ -78,4 +80,35 @@ export async function importStorageData(
   const storage = state.core.storage;
   if (!storage) return null;
   return await CoreOps.importStorage(storage, bufData);
+}
+
+export async function generateDiff(
+  state: IAppState,
+  fromCommit: string,
+  toCommit: string
+) {
+  const storage = state.core.storage;
+  if (!storage) throw new Error("No storage");
+
+  const diffObj = await DiffHelper.findRevisionDiff(
+    storage,
+    fromCommit,
+    toCommit
+  );
+  const packer = new BsonPackAdapter();
+  const dataPack = packer.packObjects({
+    commits: Object.values(diffObj.objects.commits),
+    blobs: Object.values(diffObj.objects.blobs),
+    trees: Object.values(diffObj.objects.trees),
+    metadata: Object.values(diffObj.objects.metadata),
+    _header: {
+      version: "1",
+      timestamp: new Date().toISOString(),
+      others: {
+        commitChains: JSON.stringify(diffObj.commitChains),
+      },
+    },
+  });
+
+  return dataPack;
 }

@@ -29,6 +29,7 @@ const initialState: IAppState = {
     fileName: "",
     fileContent: "",
   },
+  modalDiff: {},
 };
 
 // Reducer
@@ -68,6 +69,14 @@ const reducer = (state: IAppState, action: Action): IAppState => {
         ...state,
         modalAddEdit: {
           ...state.modalAddEdit,
+          ...action.payload,
+        },
+      };
+    case "SET_DIFF_MODAL":
+      return {
+        ...state,
+        modalDiff: {
+          ...state.modalDiff,
           ...action.payload,
         },
       };
