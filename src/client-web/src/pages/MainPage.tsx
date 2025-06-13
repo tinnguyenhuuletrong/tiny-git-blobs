@@ -17,6 +17,7 @@ import {
 import { saveArrayBuffer } from "@/lib/utils";
 import type { Action, IAppState } from "@/types";
 import { FaPlus } from "react-icons/fa";
+import { FaHistory, FaFileImport, FaFileExport } from "react-icons/fa";
 import { Tooltip } from "@/components/ui/tooltip";
 import { addFile, fetchHead } from "@/lib/coreOpts";
 import {
@@ -35,10 +36,10 @@ export const MainPage: React.FC = () => {
   } | null>(null);
 
   const {
-    mainPage: { treeSnapshot },
+    mainPage: { head },
   } = state;
 
-  if (!treeSnapshot) {
+  if (!head) {
     return null;
   }
 
@@ -64,7 +65,7 @@ export const MainPage: React.FC = () => {
     if (storage) {
       const head = await fetchHead(storage);
       if (head) {
-        dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
+        dispatch({ type: "SET_COMMIT_HEAD", payload: head });
       }
     }
   };
@@ -90,7 +91,7 @@ export const MainPage: React.FC = () => {
         if (storage) {
           const head = await fetchHead(storage);
           if (head) {
-            dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
+            dispatch({ type: "SET_COMMIT_HEAD", payload: head });
           }
         }
         setToast({ message: "Import successful", type: "success" });
@@ -108,7 +109,7 @@ export const MainPage: React.FC = () => {
         </h1>
         <div className="flex justify-between items-center text-sm mb-2">
           <span className="truncate max-w-3/4">
-            Snapshot hash: {treeSnapshot?.hash}
+            Commit hash: {head?.commit?.hash}
           </span>
           <div className="flex gap-2">
             <input
@@ -126,6 +127,7 @@ export const MainPage: React.FC = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={handleHistoryOpen}>
+                  <FaHistory className="mr-2 h-4 w-4" />
                   History
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -133,9 +135,11 @@ export const MainPage: React.FC = () => {
                     document.getElementById("import-file")?.click()
                   }
                 >
+                  <FaFileImport className="mr-2 h-4 w-4" />
                   Import
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExport}>
+                  <FaFileExport className="mr-2 h-4 w-4" />
                   Export
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -143,16 +147,16 @@ export const MainPage: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Snapshot Tree</h2>
+          <h2 className="text-lg font-semibold">HEAD Tree</h2>
           <Tooltip content="Add New File">
             <Button variant="ghost" size="icon" onClick={handleAddNewFile}>
               <FaPlus />
             </Button>
           </Tooltip>
         </div>
-        {state.mainPage.treeSnapshot && (
+        {state.mainPage.head?.tree && (
           <SnapshotTree
-            tree={state.mainPage.treeSnapshot}
+            tree={state.mainPage.head.tree}
             onPreview={handlePreviewOpen}
             onDownload={handlePreviewDownload}
             onEdit={handleEditFile}
@@ -221,7 +225,7 @@ function usePreviewModalHandler(
   state: IAppState,
   dispatch: React.Dispatch<Action>
 ) {
-  const treeSnapshot = state.mainPage.treeSnapshot;
+  const treeSnapshot = state.mainPage.head?.tree;
   if (!treeSnapshot) throw new Error("OoO");
 
   const handlePreviewOpen = (filePath: string) => {
@@ -303,7 +307,7 @@ function useAddEditModalHandler(
         await addFile(storage, fileName, fileContent);
         const head = await fetchHead(storage);
         if (head) {
-          dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
+          dispatch({ type: "SET_COMMIT_HEAD", payload: head });
         }
       }
     } else if (mode === "edit") {
@@ -312,7 +316,7 @@ function useAddEditModalHandler(
       if (storage) {
         const head = await fetchHead(storage);
         if (head) {
-          dispatch({ type: "SET_TREE_SNAPSHOT", payload: head.tree });
+          dispatch({ type: "SET_COMMIT_HEAD", payload: head });
         }
       }
     }

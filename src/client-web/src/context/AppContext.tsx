@@ -15,7 +15,7 @@ const initialState: IAppState = {
   },
   route: "startup",
   mainPage: {
-    treeSnapshot: null,
+    head: null,
   },
   modalHistory: {
     commitHistory: [],
@@ -39,12 +39,12 @@ const reducer = (state: IAppState, action: Action): IAppState => {
         ...state,
         route: action.payload,
       };
-    case "SET_TREE_SNAPSHOT":
+    case "SET_COMMIT_HEAD":
       return {
         ...state,
         mainPage: {
           ...state.mainPage,
-          treeSnapshot: action.payload,
+          head: action.payload,
         },
       };
     case "SET_COMMIT_HISTORY":

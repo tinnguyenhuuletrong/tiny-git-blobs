@@ -1,23 +1,19 @@
 import React from "react";
 import type { ITree, ITreeEntry } from "../types";
 import { Button } from "./ui/button";
-import { FaRegEye, FaDownload, FaEdit, FaTrash } from "react-icons/fa";
+import { FaRegEye, FaDownload } from "react-icons/fa";
 import { Tooltip } from "@/components/ui/tooltip";
 
-interface SnapshotTreeProps {
+interface SnapshotTreePreviewProps {
   tree: ITree;
   onPreview: (filePath: string) => void;
   onDownload: (filePath: string) => void;
-  onEdit?: (filePath: string, blobHash: string) => void;
-  onDelete?: (filePath: string) => void;
 }
 
-export const SnapshotTree: React.FC<SnapshotTreeProps> = ({
+export const SnapshotTreePreview: React.FC<SnapshotTreePreviewProps> = ({
   tree,
   onPreview,
   onDownload,
-  onEdit,
-  onDelete,
 }) => {
   return (
     <div className="w-full p-4 bg-card rounded-lg shadow-md flex flex-col gap-2">
@@ -68,30 +64,6 @@ export const SnapshotTree: React.FC<SnapshotTreeProps> = ({
                       <FaDownload />
                     </Button>
                   </Tooltip>
-                  {onEdit && (
-                    <Tooltip content="Edit">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="p-2"
-                        onClick={() => onEdit(filePath, treeEntry.blob_hash)}
-                      >
-                        <FaEdit />
-                      </Button>
-                    </Tooltip>
-                  )}
-                  {onDelete && (
-                    <Tooltip content="Delete">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="p-2 text-destructive"
-                        onClick={() => onDelete(filePath)}
-                      >
-                        <FaTrash />
-                      </Button>
-                    </Tooltip>
-                  )}
                 </div>
               </li>
             );

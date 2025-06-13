@@ -24,8 +24,8 @@ export async function appStartingUp(
   head = await CoreOps.fetchHead(storage);
   if (head) {
     dispatch({
-      type: "SET_TREE_SNAPSHOT",
-      payload: head?.tree,
+      type: "SET_COMMIT_HEAD",
+      payload: head,
     });
   }
 }

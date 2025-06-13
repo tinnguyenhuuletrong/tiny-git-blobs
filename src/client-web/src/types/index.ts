@@ -20,7 +20,10 @@ export interface IAppState {
   };
   route: Route;
   mainPage: {
-    treeSnapshot: ITree | null;
+    head: {
+      tree: ITree;
+      commit: ICommit;
+    } | null;
   };
   modalHistory: {
     commitHistory: ICommit[];
@@ -41,7 +44,13 @@ export type Action =
   | { type: "APP_STARTUP_BEGIN" }
   | { type: "APP_STARTUP_END"; payload: { storage: IStorageAdapter } }
   | { type: "SET_ROUTE"; payload: Route }
-  | { type: "SET_TREE_SNAPSHOT"; payload: ITree }
+  | {
+      type: "SET_COMMIT_HEAD";
+      payload: {
+        tree: ITree;
+        commit: ICommit;
+      };
+    }
   | { type: "SET_COMMIT_HISTORY"; payload: ICommit[] }
   | {
       type: "SET_PREVIEW_TREE_ENTRY";
