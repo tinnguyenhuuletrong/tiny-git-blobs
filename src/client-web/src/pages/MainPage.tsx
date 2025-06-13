@@ -24,7 +24,11 @@ import {
   FaFileExport,
   FaCodeBranch,
 } from "react-icons/fa";
-import { Tooltip } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { addFile, fetchHead } from "@/lib/coreOpts";
 import {
   DropdownMenu,
@@ -166,10 +170,15 @@ export const MainPage: React.FC = () => {
         </div>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">HEAD Tree</h2>
-          <Tooltip content="Add New File">
-            <Button variant="ghost" size="icon" onClick={handleAddNewFile}>
-              <FaPlus />
-            </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleAddNewFile}>
+                <FaPlus />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add New File</p>
+            </TooltipContent>
           </Tooltip>
         </div>
         {state.mainPage.head?.tree && (
@@ -215,6 +224,7 @@ export const MainPage: React.FC = () => {
         open={state.route === "main/modalDiff"}
         onClose={handleDiffClose}
       />
+
       {toast && (
         <Toast
           message={toast.message}

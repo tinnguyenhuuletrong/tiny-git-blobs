@@ -2,7 +2,11 @@ import React from "react";
 import type { ITree, ITreeEntry } from "../types";
 import { Button } from "./ui/button";
 import { FaRegEye, FaDownload } from "react-icons/fa";
-import { Tooltip } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SnapshotTreePreviewProps {
   tree: ITree;
@@ -44,25 +48,35 @@ export const SnapshotTreePreview: React.FC<SnapshotTreePreviewProps> = ({
                   </div>
                 </div>
                 <div className="flex gap-1 mt-2 sm:mt-0 flex-wrap justify-end">
-                  <Tooltip content="Preview">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="p-2"
-                      onClick={() => onPreview(filePath)}
-                    >
-                      <FaRegEye />
-                    </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="p-2"
+                        onClick={() => onPreview(filePath)}
+                      >
+                        <FaRegEye />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Preview</p>
+                    </TooltipContent>
                   </Tooltip>
-                  <Tooltip content="Download">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="p-2"
-                      onClick={() => onDownload(filePath)}
-                    >
-                      <FaDownload />
-                    </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="p-2"
+                        onClick={() => onDownload(filePath)}
+                      >
+                        <FaDownload />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Download</p>
+                    </TooltipContent>
                   </Tooltip>
                 </div>
               </li>

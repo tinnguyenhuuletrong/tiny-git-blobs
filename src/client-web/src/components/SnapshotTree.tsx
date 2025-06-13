@@ -2,7 +2,11 @@ import React from "react";
 import type { ITree, ITreeEntry } from "../types";
 import { Button } from "./ui/button";
 import { FaRegEye, FaDownload, FaEdit, FaTrash } from "react-icons/fa";
-import { Tooltip } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SnapshotTreeProps {
   tree: ITree;
@@ -48,48 +52,68 @@ export const SnapshotTree: React.FC<SnapshotTreeProps> = ({
                   </div>
                 </div>
                 <div className="flex gap-1 mt-2 sm:mt-0 flex-wrap justify-end">
-                  <Tooltip content="Preview">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="p-2"
-                      onClick={() => onPreview(filePath)}
-                    >
-                      <FaRegEye />
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content="Download">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="p-2"
-                      onClick={() => onDownload(filePath)}
-                    >
-                      <FaDownload />
-                    </Button>
-                  </Tooltip>
-                  {onEdit && (
-                    <Tooltip content="Edit">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
                         size="icon"
                         variant="ghost"
                         className="p-2"
-                        onClick={() => onEdit(filePath, treeEntry.blob_hash)}
+                        onClick={() => onPreview(filePath)}
                       >
-                        <FaEdit />
+                        <FaRegEye />
                       </Button>
-                    </Tooltip>
-                  )}
-                  {onDelete && (
-                    <Tooltip content="Delete">
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Preview</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="p-2 text-destructive"
-                        onClick={() => onDelete(filePath)}
+                        className="p-2"
+                        onClick={() => onDownload(filePath)}
                       >
-                        <FaTrash />
+                        <FaDownload />
                       </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Download</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  {onEdit && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="p-2"
+                          onClick={() => onEdit(filePath, treeEntry.blob_hash)}
+                        >
+                          <FaEdit />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Edit</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {onDelete && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="p-2 text-destructive"
+                          onClick={() => onDelete(filePath)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Delete</p>
+                      </TooltipContent>
                     </Tooltip>
                   )}
                 </div>
