@@ -45,7 +45,7 @@ bun run cli --storagePath <path to storage folder>
 - **add [fileName] [fileContent]**: Add a new file with the specified content.
 - **getBlob [blobHash]**: Retrieve and display the content of a blob by its hash.
 - **history**: Display the commit history.
-- **snapshot [commitHash]**: Retrieve a snapshot of the repository state at a specific commit (defaults to head if not provided).
+- **snapshot [--save] [commitHash]**: Retrieve repository state at specific commit (defaults to head if not provided) - Added flag option
 - **diff [--save] [fromCommitHash] [toCommitHash]**: Generate diff package update data from fromCommitHash to toCommitHash (default fromCommitHash is head).
 - **export [path]**: Export the entire storage to a binary file (default path is ./backup.bin).
 - **import [importPath]**: Import a backup from the specified path.
